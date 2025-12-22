@@ -1,26 +1,34 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getTrademarks, checkTrademark, getBlockedTerms, addBlockedTerm } from '../api/client'
-import Loading from '../components/Loading'
+import { checkTrademark, getBlockedTerms, addBlockedTerm } from '../api/client'
+import {
+  Shield,
+  ShieldCheck,
+  ShieldAlert,
+  Loader2,
+  Plus,
+  Search,
+  AlertTriangle,
+  Info,
+  X,
+} from 'lucide-react'
 
 export default function Trademarks() {
-  const [searchTerm, setSearchTerm] = useState('')
   const [checkPhrase, setCheckPhrase] = useState('')
   const [checkResult, setCheckResult] = useState(null)
-  const [checking, setChecking] = useState(false)
   const [newBlockedTerm, setNewBlockedTerm] = useState('')
   const [blockReason, setBlockReason] = useState('manual')
 
   const queryClient = useQueryClient()
 
-  const { data: trademarks, isLoading } = useQuery({
-    queryKey: ['trademarks', searchTerm],
-    queryFn: () => getTrademarks({ search: searchTerm, page_size: 100 }),
-  })
-
   const { data: blockedTerms } = useQuery({
     queryKey: ['blockedTerms'],
     queryFn: getBlockedTerms,
+  })
+
+  const checkMutation = useMutation({
+    mutationFn: checkTrademark,
+    onSuccess: (data) => setCheckResult(data),
   })
 
   const addBlockMutation = useMutation({
@@ -31,16 +39,9 @@ export default function Trademarks() {
     },
   })
 
-  const handleCheck = async () => {
+  const handleCheck = () => {
     if (!checkPhrase.trim()) return
-    setChecking(true)
-    try {
-      const result = await checkTrademark(checkPhrase)
-      setCheckResult(result)
-    } catch (error) {
-      console.error('Check failed:', error)
-    }
-    setChecking(false)
+    checkMutation.mutate(checkPhrase)
   }
 
   const handleAddBlocked = () => {
@@ -49,186 +50,152 @@ export default function Trademarks() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Trademark Safety</h1>
-        <p className="text-gray-500 mt-1">Check phrases for trademark conflicts and manage blocklists</p>
+        <h1 className="text-2xl font-bold text-zinc-100">Trademark Check</h1>
+        <p className="text-zinc-500 text-sm mt-1">Verify phrase safety before uploading to Amazon</p>
       </div>
 
       {/* Safety Checker */}
-      <div className="card">
-        <h2 className="text-lg font-semibold mb-4">Check Phrase Safety</h2>
-        <div className="flex gap-4">
-          <input
-            type="text"
-            className="input flex-1"
-            placeholder="Enter a phrase to check for trademark conflicts..."
-            value={checkPhrase}
-            onChange={(e) => setCheckPhrase(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
-          />
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Shield size={18} className="text-amber-400" />
+          <h2 className="text-base font-semibold text-zinc-200">Check Phrase Safety</h2>
+        </div>
+
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <input
+              type="text"
+              className="input pl-10"
+              placeholder="Enter a phrase to check..."
+              value={checkPhrase}
+              onChange={(e) => setCheckPhrase(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
+            />
+          </div>
           <button
             className="btn btn-primary"
             onClick={handleCheck}
-            disabled={checking}
+            disabled={checkMutation.isPending}
           >
-            {checking ? 'Checking...' : 'Check Safety'}
+            {checkMutation.isPending ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                <span>Checking...</span>
+              </>
+            ) : (
+              'Check'
+            )}
           </button>
         </div>
 
+        {/* Result */}
         {checkResult && (
-          <div className={`mt-4 p-4 rounded-lg ${
-            checkResult.is_safe ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+          <div className={`mt-4 p-4 rounded-xl border ${
+            checkResult.is_safe
+              ? 'bg-emerald-500/10 border-emerald-500/30'
+              : 'bg-red-500/10 border-red-500/30'
           }`}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-lg">
-                {checkResult.is_safe ? '✅ Safe to Use' : '⚠️ Risk Detected'}
-              </h3>
-              <span className={`text-2xl font-bold ${
-                checkResult.is_safe ? 'text-green-600' : 'text-red-600'
+              <div className="flex items-center gap-2">
+                {checkResult.is_safe ? (
+                  <ShieldCheck size={24} className="text-emerald-400" />
+                ) : (
+                  <ShieldAlert size={24} className="text-red-400" />
+                )}
+                <span className={`text-lg font-semibold ${
+                  checkResult.is_safe ? 'text-emerald-400' : 'text-red-400'
+                }`}>
+                  {checkResult.is_safe ? 'Safe to Use' : 'Risk Detected'}
+                </span>
+              </div>
+              <div className={`text-2xl font-bold ${
+                checkResult.is_safe ? 'text-emerald-400' : 'text-red-400'
               }`}>
-                Risk: {checkResult.risk_score.toFixed(0)}%
-              </span>
+                {checkResult.risk_score.toFixed(0)}%
+              </div>
             </div>
 
             {checkResult.matches?.length > 0 && (
-              <div className="mt-3">
-                <p className="font-medium text-red-800 mb-2">Matches Found:</p>
-                <ul className="list-disc list-inside text-red-700">
-                  {checkResult.matches.map((match, idx) => (
-                    <li key={idx}>
-                      "{match.term}" - {match.type} ({match.match_type}, score: {match.score})
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {checkResult.warnings?.length > 0 && (
-              <div className="mt-3">
-                <p className="font-medium text-yellow-800 mb-2">Warnings:</p>
-                <ul className="list-disc list-inside text-yellow-700">
-                  {checkResult.warnings.map((warning, idx) => (
-                    <li key={idx}>{warning}</li>
-                  ))}
-                </ul>
+              <div className="mt-3 space-y-2">
+                <p className="text-sm font-medium text-red-400">Matches Found:</p>
+                {checkResult.matches.map((match, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-sm text-red-300">
+                    <AlertTriangle size={14} />
+                    <span>"{match.term}" - {match.type} ({match.match_type})</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Trademark Database */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Trademark Database</h2>
-          <div className="card">
-            <div className="mb-4">
-              <input
-                type="text"
-                className="input"
-                placeholder="Search trademarks..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            {isLoading ? (
-              <Loading text="Loading trademarks..." />
-            ) : trademarks?.length > 0 ? (
-              <div className="max-h-96 overflow-y-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 sticky top-0">
-                    <tr>
-                      <th className="text-left p-2">Term</th>
-                      <th className="text-left p-2">Source</th>
-                      <th className="text-left p-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {trademarks.map((tm) => (
-                      <tr key={tm.id} className="hover:bg-gray-50">
-                        <td className="p-2 font-medium">{tm.term}</td>
-                        <td className="p-2 text-gray-500">{tm.source}</td>
-                        <td className="p-2">
-                          <span className={`badge ${
-                            tm.status === 'LIVE' ? 'badge-success' : 'badge-info'
-                          }`}>
-                            {tm.status || 'Unknown'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">
-                {searchTerm ? 'No trademarks found' : 'No trademarks in database. Import a USPTO CSV file.'}
-              </p>
-            )}
-          </div>
+      {/* Blocked Terms */}
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <X size={18} className="text-red-400" />
+          <h2 className="text-base font-semibold text-zinc-200">Blocked Terms</h2>
         </div>
 
-        {/* Blocked Terms */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Blocked Terms</h2>
-          <div className="card">
-            <div className="mb-4 space-y-3">
-              <input
-                type="text"
-                className="input"
-                placeholder="Add term to blocklist..."
-                value={newBlockedTerm}
-                onChange={(e) => setNewBlockedTerm(e.target.value)}
-              />
-              <div className="flex gap-2">
-                <select
-                  className="input flex-1"
-                  value={blockReason}
-                  onChange={(e) => setBlockReason(e.target.value)}
-                >
-                  <option value="manual">Manual Block</option>
-                  <option value="trademark">Trademark</option>
-                  <option value="brand">Brand Name</option>
-                  <option value="offensive">Offensive</option>
-                  <option value="policy">Policy Violation</option>
-                </select>
-                <button
-                  className="btn btn-danger"
-                  onClick={handleAddBlocked}
-                  disabled={addBlockMutation.isPending}
-                >
-                  Block
-                </button>
-              </div>
-            </div>
+        <div className="flex gap-3 mb-4">
+          <input
+            type="text"
+            className="input flex-1"
+            placeholder="Add term to blocklist..."
+            value={newBlockedTerm}
+            onChange={(e) => setNewBlockedTerm(e.target.value)}
+          />
+          <select
+            className="input w-40"
+            value={blockReason}
+            onChange={(e) => setBlockReason(e.target.value)}
+          >
+            <option value="manual">Manual</option>
+            <option value="trademark">Trademark</option>
+            <option value="brand">Brand</option>
+            <option value="offensive">Offensive</option>
+          </select>
+          <button
+            className="btn btn-danger"
+            onClick={handleAddBlocked}
+            disabled={addBlockMutation.isPending}
+          >
+            <Plus size={18} />
+            <span>Block</span>
+          </button>
+        </div>
 
-            {blockedTerms?.length > 0 ? (
-              <ul className="divide-y divide-gray-100">
-                {blockedTerms.map((term) => (
-                  <li key={term.id} className="py-2 flex items-center justify-between">
-                    <div>
-                      <span className="font-medium">{term.term}</span>
-                      <span className="text-gray-500 text-sm ml-2">({term.reason})</span>
-                    </div>
-                    <span className="badge badge-danger">Blocked</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-gray-500 text-center py-4">No blocked terms</p>
-            )}
+        {blockedTerms?.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {blockedTerms.map((term) => (
+              <span
+                key={term.id}
+                className="px-3 py-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-sm"
+              >
+                {term.term}
+              </span>
+            ))}
           </div>
+        ) : (
+          <p className="text-zinc-600 text-sm">No blocked terms</p>
+        )}
+      </div>
 
-          {/* Info Box */}
-          <div className="card mt-4 bg-blue-50 border-blue-200">
-            <h3 className="font-medium text-blue-800 mb-2">About Trademark Checking</h3>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Exact matches are automatically blocked</li>
-              <li>• Fuzzy matches (≥85% similar) are flagged</li>
-              <li>• Known brand names are blocked</li>
-              <li>• Risk triggers like "parody of" increase risk score</li>
+      {/* Info */}
+      <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 p-4">
+        <div className="flex items-start gap-3">
+          <Info size={18} className="text-blue-400 mt-0.5" />
+          <div className="text-sm text-zinc-400">
+            <p className="font-medium text-zinc-300 mb-2">How it works:</p>
+            <ul className="space-y-1">
+              <li>- Exact matches with known trademarks are blocked</li>
+              <li>- Fuzzy matches (85%+ similar) are flagged as risky</li>
+              <li>- Brand names and offensive terms are blocked</li>
+              <li>- Add your own terms to the blocklist</li>
             </ul>
           </div>
         </div>
