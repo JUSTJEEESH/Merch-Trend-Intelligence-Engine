@@ -1,0 +1,38 @@
+# FastAPI and server
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.25
+aiosqlite==0.19.0
+
+# Data validation
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# NLP and ML
+spacy==3.7.2
+scikit-learn==1.4.0
+sentence-transformers==2.2.2
+nltk==3.8.1
+numpy==1.26.3
+
+# Web scraping
+playwright==1.41.0
+requests==2.31.0
+beautifulsoup4==4.12.3
+lxml==5.1.0
+
+# APIs
+praw==7.7.1
+pytrends==4.9.2
+
+# Utilities
+python-dotenv==1.0.0
+aiofiles==23.2.1
+schedule==1.2.1
+rapidfuzz==3.6.1
+
+# Export
+pandas==2.2.0
