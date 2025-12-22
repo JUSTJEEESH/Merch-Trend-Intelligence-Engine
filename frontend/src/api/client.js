@@ -70,4 +70,26 @@ export const getExportFiles = () => client.get('/export/files').then(res => res.
 export const downloadExport = (filename) => `${API_BASE_URL}/export/download/${filename}`
 export const deleteExportFile = (filename) => client.delete(`/export/files/${filename}`).then(res => res.data)
 
+// Ideas - Bulk Generation
+export const generateIdeas = (params = {}) => {
+  const queryParams = new URLSearchParams()
+  if (params.count) queryParams.append('count', params.count)
+  if (params.niches) queryParams.append('niches', params.niches)
+  if (params.creativity) queryParams.append('creativity', params.creativity)
+  if (params.include_classics !== undefined) queryParams.append('include_classics', params.include_classics)
+  if (params.include_generated !== undefined) queryParams.append('include_generated', params.include_generated)
+  if (params.include_variations !== undefined) queryParams.append('include_variations', params.include_variations)
+  return client.post(`/ideas/generate?${queryParams.toString()}`).then(res => res.data)
+}
+export const quickGenerateIdeas = (topic, count = 50) =>
+  client.post('/ideas/quick', { topic, count }).then(res => res.data)
+export const getBestsellers = (niche = null, limit = 100) => {
+  const params = { limit }
+  if (niche) params.niche = niche
+  return client.get('/ideas/bestsellers', { params }).then(res => res.data)
+}
+export const getAvailableNiches = () => client.get('/ideas/niches').then(res => res.data)
+export const getTemplates = (limit = 50) => client.get(`/ideas/templates?limit=${limit}`).then(res => res.data)
+export const getTopics = () => client.get('/ideas/topics').then(res => res.data)
+
 export default client
