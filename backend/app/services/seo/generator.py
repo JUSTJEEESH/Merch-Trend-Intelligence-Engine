@@ -1,5 +1,6 @@
-"""Amazon Merch SEO listing generator."""
+"""Amazon Merch SEO listing generator - Professional quality listings."""
 import re
+import random
 import logging
 from typing import Dict, Any, List, Optional
 
@@ -7,65 +8,113 @@ logger = logging.getLogger(__name__)
 
 
 class SEOGenerator:
-    """Generate SEO-optimized listings for Amazon Merch on Demand."""
+    """Generate professional SEO-optimized listings for Amazon Merch on Demand."""
 
     # Words forbidden in Amazon Merch listings
     FORBIDDEN_WORDS = [
-        # Product type words (not allowed in title)
         "shirt", "t-shirt", "tshirt", "tee", "hoodie", "sweatshirt",
         "tank top", "tanktop", "long sleeve", "clothing", "apparel",
         "pullover", "crewneck", "raglan",
-
-        # Amazon policy violations
         "best seller", "bestseller", "#1", "number one", "top rated",
         "amazon", "prime", "alexa", "kindle", "echo",
         "authentic", "genuine", "official", "licensed",
         "free shipping", "discount", "sale", "cheap",
         "limited edition", "exclusive", "rare",
-
-        # Potentially problematic
         "sexy", "adult", "explicit",
     ]
 
-    # Product words to avoid in titles
     PRODUCT_WORDS = [
         "shirt", "t-shirt", "tshirt", "tee", "top",
         "hoodie", "sweatshirt", "sweater", "pullover",
         "tank", "vest", "jacket", "clothing"
     ]
 
-    # Niche-specific keywords
-    NICHE_KEYWORDS = {
-        "fitness": ["gym", "workout", "gains", "lifting", "exercise", "health"],
-        "coffee": ["caffeine", "espresso", "morning", "brew", "barista", "latte"],
-        "dogs": ["puppy", "canine", "pet", "fur baby", "paw", "woof"],
-        "cats": ["kitten", "feline", "meow", "whiskers", "purr"],
-        "nursing": ["nurse", "healthcare", "hospital", "medical", "RN", "scrubs"],
-        "teaching": ["teacher", "educator", "school", "classroom", "students"],
-        "gaming": ["gamer", "player", "video games", "console", "PC"],
-        "fishing": ["angler", "fishing", "bass", "catch", "tackle", "outdoors"],
-        "parenting": ["mom", "dad", "parent", "kids", "family"],
-        "programming": ["developer", "coder", "software", "tech", "debug"],
+    # Professional title patterns (based on top sellers)
+    TITLE_PATTERNS = [
+        "{phrase} - Funny {niche} Gift Idea",
+        "{phrase} - {niche} Lover Gift",
+        "{phrase} - Cool {niche} Quote",
+        "{phrase} - {niche} Saying Gift Idea",
+        "Funny {niche} - {phrase}",
+        "{phrase} - Hilarious {niche} Quote",
+        "{phrase} - Perfect Gift For {niche} Lovers",
+        "{phrase} - {niche} Humor Quote",
+    ]
+
+    # Niche-specific data
+    NICHE_DATA = {
+        "coffee": {
+            "keywords": ["coffee lover", "caffeine", "espresso", "morning", "brew", "latte", "barista", "coffee addict"],
+            "audience": ["coffee lovers", "caffeine addicts", "baristas", "morning people", "espresso enthusiasts"],
+            "occasions": ["coffee dates", "morning routines", "coffee shop visits", "caffeine breaks"],
+        },
+        "fitness": {
+            "keywords": ["gym", "workout", "gains", "lifting", "fitness", "exercise", "muscles", "training"],
+            "audience": ["gym lovers", "fitness enthusiasts", "bodybuilders", "workout addicts", "gym rats"],
+            "occasions": ["leg day", "gym sessions", "workout time", "training days"],
+        },
+        "dogs": {
+            "keywords": ["dog lover", "puppy", "canine", "pet parent", "fur baby", "dog mom", "dog dad", "paw"],
+            "audience": ["dog lovers", "pet parents", "dog moms", "dog dads", "puppy owners"],
+            "occasions": ["dog walks", "pet adoption days", "dog park visits"],
+        },
+        "cats": {
+            "keywords": ["cat lover", "kitten", "feline", "cat mom", "cat dad", "meow", "kitty", "whiskers"],
+            "audience": ["cat lovers", "cat moms", "cat dads", "feline enthusiasts", "kitty owners"],
+            "occasions": ["lazy days with cats", "kitten adoption", "cat cuddle time"],
+        },
+        "nursing": {
+            "keywords": ["nurse", "RN", "healthcare", "medical", "scrubs", "hospital", "nursing", "patient care"],
+            "audience": ["nurses", "RNs", "healthcare workers", "medical professionals", "nursing students"],
+            "occasions": ["nurse appreciation", "hospital shifts", "nursing school graduation"],
+        },
+        "teaching": {
+            "keywords": ["teacher", "educator", "classroom", "school", "teaching", "students", "education"],
+            "audience": ["teachers", "educators", "professors", "teaching assistants", "school staff"],
+            "occasions": ["back to school", "teacher appreciation", "end of school year", "graduation"],
+        },
+        "gaming": {
+            "keywords": ["gamer", "gaming", "video games", "player", "console", "PC gaming", "esports"],
+            "audience": ["gamers", "video game fans", "esports enthusiasts", "console players", "PC gamers"],
+            "occasions": ["game night", "new game releases", "gaming marathons", "esports events"],
+        },
+        "fishing": {
+            "keywords": ["fishing", "angler", "bass", "fisherman", "tackle", "catch", "reel", "lake", "boat"],
+            "audience": ["anglers", "fishermen", "bass fishers", "fly fishing fans", "fishing enthusiasts"],
+            "occasions": ["fishing trips", "lake outings", "bass tournaments", "early morning fishing"],
+        },
+        "parenting": {
+            "keywords": ["mom", "dad", "parent", "kids", "family", "mother", "father", "mama", "papa"],
+            "audience": ["moms", "dads", "parents", "new parents", "busy parents", "tired parents"],
+            "occasions": ["Mother's Day", "Father's Day", "family gatherings", "parenting life"],
+        },
+        "beer": {
+            "keywords": ["beer", "craft beer", "brewery", "hops", "IPA", "ale", "brew", "drinking"],
+            "audience": ["beer lovers", "craft beer fans", "brewery enthusiasts", "IPA lovers", "beer drinkers"],
+            "occasions": ["happy hour", "brewery tours", "beer tasting", "game day"],
+        },
+        "wine": {
+            "keywords": ["wine", "vino", "winery", "grape", "merlot", "chardonnay", "rosé", "sommelier"],
+            "audience": ["wine lovers", "wine enthusiasts", "sommeliers", "wine moms", "wine dads"],
+            "occasions": ["wine night", "wine tasting", "vineyard visits", "girls night out"],
+        },
+        "hunting": {
+            "keywords": ["hunting", "hunter", "deer", "duck", "bow", "rifle", "game", "outdoors", "camo"],
+            "audience": ["hunters", "deer hunters", "duck hunters", "bow hunters", "outdoor enthusiasts"],
+            "occasions": ["hunting season", "deer season", "duck season", "hunting trips"],
+        },
+        "outdoors": {
+            "keywords": ["hiking", "camping", "mountains", "nature", "outdoors", "adventure", "trails", "explore"],
+            "audience": ["hikers", "campers", "nature lovers", "outdoor enthusiasts", "adventure seekers"],
+            "occasions": ["hiking trips", "camping weekends", "mountain adventures", "nature walks"],
+        },
     }
 
-    # Tone templates
-    TONE_TEMPLATES = {
-        "neutral": {
-            "title_format": "{phrase} - {keyword} Design",
-            "bullet_format": "Features the phrase '{phrase}' - {benefit}",
-        },
-        "funny": {
-            "title_format": "Funny {phrase} - Humorous {keyword} Gift",
-            "bullet_format": "Hilarious '{phrase}' design - {benefit}",
-        },
-        "sarcastic": {
-            "title_format": "{phrase} - Sarcastic {keyword} Quote",
-            "bullet_format": "Witty '{phrase}' saying - {benefit}",
-        },
-        "proud": {
-            "title_format": "{phrase} - Proud {keyword} Statement",
-            "bullet_format": "Bold '{phrase}' declaration - {benefit}",
-        }
+    # Generic data for unknown niches
+    GENERIC_DATA = {
+        "keywords": ["funny", "humor", "quote", "saying", "gift", "idea", "present", "cool", "awesome"],
+        "audience": ["men", "women", "adults", "teens", "friends", "family", "coworkers"],
+        "occasions": ["birthdays", "Christmas", "holidays", "special occasions", "everyday wear"],
     }
 
     def generate(
@@ -74,17 +123,7 @@ class SEOGenerator:
         niche: Optional[str] = None,
         tone: str = "neutral"
     ) -> Dict[str, Any]:
-        """
-        Generate SEO-optimized listing content.
-
-        Args:
-            phrase: The main phrase for the design
-            niche: Optional niche for keyword targeting
-            tone: Tone of the listing (neutral, funny, sarcastic, proud)
-
-        Returns:
-            Dictionary with title, bullets, description, and backend keywords
-        """
+        """Generate professional Amazon Merch listing."""
         result = {
             "title": "",
             "bullet_1": "",
@@ -95,31 +134,17 @@ class SEOGenerator:
             "warnings": []
         }
 
-        # Clean the phrase
         clean_phrase = self._clean_phrase(phrase)
+        niche_data = self._get_niche_data(niche)
 
-        # Get niche keywords
-        keywords = self._get_keywords(niche)
+        # Generate each field
+        result["title"] = self._generate_title(clean_phrase, niche, niche_data)
+        result["bullet_1"] = self._generate_bullet_1(clean_phrase, niche_data)
+        result["bullet_2"] = self._generate_bullet_2()
+        result["description"] = self._generate_description(clean_phrase, niche, niche_data)
+        result["backend_keywords"] = self._generate_backend_keywords(clean_phrase, niche_data)
 
-        # Generate title (max 80 characters)
-        result["title"] = self._generate_title(clean_phrase, keywords, tone)
-
-        # Generate bullet points (max 256 characters each)
-        result["bullet_1"], result["bullet_2"] = self._generate_bullets(
-            clean_phrase, keywords, tone
-        )
-
-        # Generate description (max 2000 characters)
-        result["description"] = self._generate_description(
-            clean_phrase, keywords, niche
-        )
-
-        # Generate backend keywords (max 250 characters)
-        result["backend_keywords"] = self._generate_backend_keywords(
-            clean_phrase, keywords, niche
-        )
-
-        # Validate compliance
+        # Validate
         validation = self.validate_listing(
             result["title"],
             result["bullet_1"],
@@ -134,141 +159,98 @@ class SEOGenerator:
 
     def _clean_phrase(self, phrase: str) -> str:
         """Clean phrase for use in listings."""
-        # Remove product words
         words = phrase.split()
-        clean_words = [
-            w for w in words
-            if w.lower() not in self.PRODUCT_WORDS
-        ]
+        clean_words = [w for w in words if w.lower() not in self.PRODUCT_WORDS]
         return ' '.join(clean_words) if clean_words else phrase
 
-    def _get_keywords(self, niche: Optional[str]) -> List[str]:
-        """Get relevant keywords for the niche."""
-        if niche and niche.lower() in self.NICHE_KEYWORDS:
-            return self.NICHE_KEYWORDS[niche.lower()]
-        return ["gift", "present", "idea", "design", "quote", "saying"]
+    def _get_niche_data(self, niche: Optional[str]) -> Dict:
+        """Get niche-specific data."""
+        if niche and niche.lower() in self.NICHE_DATA:
+            return self.NICHE_DATA[niche.lower()]
+        return self.GENERIC_DATA
 
-    def _generate_title(
-        self,
-        phrase: str,
-        keywords: List[str],
-        tone: str
-    ) -> str:
-        """Generate SEO-optimized title."""
-        # Get tone template
-        template = self.TONE_TEMPLATES.get(tone, self.TONE_TEMPLATES["neutral"])
+    def _generate_title(self, phrase: str, niche: Optional[str], niche_data: Dict) -> str:
+        """Generate professional title (max 80 chars)."""
+        # Capitalize phrase properly
+        phrase_title = phrase.title()
 
-        # Select a keyword
-        keyword = keywords[0] if keywords else "Gift"
+        # Get niche display name
+        niche_display = niche.title() if niche else "Gift"
 
-        # Generate base title
-        title = template["title_format"].format(
-            phrase=phrase.title(),
-            keyword=keyword.title()
-        )
-
-        # Truncate if too long (max 80 chars for Merch)
-        if len(title) > 80:
-            title = phrase.title()[:77] + "..."
-
-        return title
-
-    def _generate_bullets(
-        self,
-        phrase: str,
-        keywords: List[str],
-        tone: str
-    ) -> tuple:
-        """Generate two bullet points."""
-        benefits = [
-            "Perfect gift idea for friends and family",
-            "Great for birthdays, holidays, or any occasion",
-            "Unique design that stands out",
-            "Makes a great conversation starter",
-            "Show off your personality",
+        # Try different patterns until we find one that fits
+        patterns = [
+            f"{phrase_title} - Funny {niche_display} Gift Idea",
+            f"{phrase_title} - {niche_display} Lover Quote",
+            f"Funny {niche_display} - {phrase_title}",
+            f"{phrase_title} - {niche_display} Humor",
+            f"{phrase_title} Gift For {niche_display} Lovers",
+            f"{phrase_title} - {niche_display} Saying",
+            f"{phrase_title}",
         ]
 
-        audiences = [
-            "men, women, and teens",
-            "adults who appreciate humor",
-            "anyone with a great sense of style",
-            "people who love unique designs",
-        ]
+        for pattern in patterns:
+            if len(pattern) <= 80:
+                return pattern
 
-        # Bullet 1: Feature + benefit
-        bullet_1 = f"Features the saying '{phrase}' - {benefits[0]}"
+        # If all too long, truncate
+        return phrase_title[:77] + "..."
 
-        # Bullet 2: Audience + occasion
-        bullet_2 = f"Great for {audiences[0]} - {benefits[1]}"
+    def _generate_bullet_1(self, phrase: str, niche_data: Dict) -> str:
+        """Generate first bullet point - audience and gift occasions."""
+        audience = random.sample(niche_data["audience"], min(3, len(niche_data["audience"])))
+        audience_str = ", ".join(audience)
 
-        # Truncate if needed (max 256 chars each)
-        bullet_1 = bullet_1[:253] + "..." if len(bullet_1) > 256 else bullet_1
-        bullet_2 = bullet_2[:253] + "..." if len(bullet_2) > 256 else bullet_2
+        bullet = f"Perfect gift for {audience_str}. Great for birthdays, Christmas, Mother's Day, Father's Day, and any special occasion. Makes an awesome present for friends and family."
 
-        return bullet_1, bullet_2
+        return bullet[:256] if len(bullet) > 256 else bullet
 
-    def _generate_description(
-        self,
-        phrase: str,
-        keywords: List[str],
-        niche: Optional[str]
-    ) -> str:
-        """Generate product description."""
-        niche_text = f"for {niche} enthusiasts" if niche else "for anyone"
+    def _generate_bullet_2(self) -> str:
+        """Generate second bullet point - product features (Amazon standard)."""
+        return "Lightweight, Classic fit, Double-needle sleeve and bottom hem"
 
-        description = f"""Looking for the perfect gift {niche_text}? This "{phrase}" design is exactly what you need!
+    def _generate_description(self, phrase: str, niche: Optional[str], niche_data: Dict) -> str:
+        """Generate professional product description."""
+        audience = random.sample(niche_data["audience"], min(3, len(niche_data["audience"])))
+        keywords = random.sample(niche_data["keywords"], min(4, len(niche_data["keywords"])))
 
-This unique design features the phrase "{phrase}" and makes an excellent gift for birthdays, holidays, Christmas, or any special occasion.
+        niche_name = niche.title() if niche else "this theme"
 
-Whether you're shopping for yourself or looking for that perfect present, this design is sure to bring a smile. It's a great way to express personality and style.
+        description = f"""Are you looking for a fun and unique gift? This "{phrase}" design is perfect!
 
-Makes a wonderful gift for {', '.join(keywords[:3]) if keywords else 'friends and family'}."""
+This eye-catching design features the saying "{phrase}" and is ideal for anyone who loves {niche_name.lower()}. Whether you're shopping for yourself or looking for that perfect gift, this is sure to be a hit.
 
-        # Truncate if needed (max 2000 chars)
-        if len(description) > 2000:
-            description = description[:1997] + "..."
+Makes an excellent gift for {', '.join(audience)}. Perfect for birthdays, Christmas, holidays, anniversaries, or just because. Show off your personality and sense of humor with this awesome design.
 
-        return description
+Great conversation starter and a wonderful way to express yourself. Keywords: {', '.join(keywords)}."""
 
-    def _generate_backend_keywords(
-        self,
-        phrase: str,
-        keywords: List[str],
-        niche: Optional[str]
-    ) -> str:
-        """Generate backend search keywords."""
-        # Start with phrase words
-        phrase_words = phrase.lower().split()
+        return description[:2000] if len(description) > 2000 else description
 
-        # Add niche keywords
-        all_keywords = list(set(phrase_words + keywords))
+    def _generate_backend_keywords(self, phrase: str, niche_data: Dict) -> str:
+        """Generate backend search keywords (max 250 chars)."""
+        # Phrase words
+        phrase_words = [w.lower() for w in phrase.split() if len(w) > 2]
 
-        # Add generic gift keywords
-        gift_keywords = [
-            "gift", "present", "birthday", "christmas", "holiday",
-            "funny", "humor", "quote", "saying", "design"
-        ]
+        # Niche keywords
+        niche_keywords = niche_data["keywords"][:5]
 
-        all_keywords.extend(gift_keywords)
+        # Generic gift keywords
+        gift_keywords = ["gift", "present", "birthday", "christmas", "funny", "humor", "quote", "saying"]
 
-        # Remove duplicates and product words
-        clean_keywords = []
+        # Combine and deduplicate
+        all_keywords = []
         seen = set()
-        for kw in all_keywords:
+        for kw in phrase_words + niche_keywords + gift_keywords:
             kw_lower = kw.lower()
-            if (kw_lower not in seen and
-                kw_lower not in self.PRODUCT_WORDS and
-                len(kw_lower) > 1):
+            if kw_lower not in seen and kw_lower not in self.PRODUCT_WORDS:
                 seen.add(kw_lower)
-                clean_keywords.append(kw_lower)
+                all_keywords.append(kw_lower)
 
-        # Join and truncate (max 250 chars)
-        backend_str = ' '.join(clean_keywords)
-        if len(backend_str) > 250:
-            # Truncate at word boundary
-            backend_str = backend_str[:250].rsplit(' ', 1)[0]
+        # Join and respect limit
+        result = ' '.join(all_keywords)
+        if len(result) > 250:
+            result = result[:250].rsplit(' ', 1)[0]
 
-        return backend_str
+        return result
 
     def validate_listing(
         self,
@@ -278,42 +260,30 @@ Makes a wonderful gift for {', '.join(keywords[:3]) if keywords else 'friends an
         description: str = None,
         backend_keywords: str = None
     ) -> Dict[str, Any]:
-        """
-        Validate listing content against Amazon Merch guidelines.
-
-        Returns:
-            Dictionary with is_compliant boolean and list of issues
-        """
+        """Validate listing against Amazon Merch guidelines."""
         issues = []
 
-        all_content = ' '.join(filter(None, [
-            title, bullet_1, bullet_2, description
-        ])).lower()
+        all_content = ' '.join(filter(None, [title, bullet_1, bullet_2, description])).lower()
 
-        # Check for forbidden words
         for word in self.FORBIDDEN_WORDS:
             if word in all_content:
                 issues.append(f"Contains forbidden word: '{word}'")
 
-        # Check title length
         if title and len(title) > 80:
             issues.append(f"Title too long: {len(title)}/80 characters")
 
-        # Check bullet lengths
         if bullet_1 and len(bullet_1) > 256:
             issues.append(f"Bullet 1 too long: {len(bullet_1)}/256 characters")
+
         if bullet_2 and len(bullet_2) > 256:
             issues.append(f"Bullet 2 too long: {len(bullet_2)}/256 characters")
 
-        # Check description length
         if description and len(description) > 2000:
             issues.append(f"Description too long: {len(description)}/2000 characters")
 
-        # Check backend keywords length
         if backend_keywords and len(backend_keywords) > 250:
             issues.append(f"Backend keywords too long: {len(backend_keywords)}/250 characters")
 
-        # Check for product words in title
         if title:
             for word in self.PRODUCT_WORDS:
                 if word in title.lower():
@@ -324,38 +294,9 @@ Makes a wonderful gift for {', '.join(keywords[:3]) if keywords else 'friends an
             "issues": issues
         }
 
-    def optimize_existing(
-        self,
-        title: str,
-        bullet_1: str = None,
-        bullet_2: str = None,
-        description: str = None
-    ) -> Dict[str, Any]:
-        """Optimize existing listing content."""
-        optimized = {
-            "title": title,
-            "bullet_1": bullet_1,
-            "bullet_2": bullet_2,
-            "description": description,
-            "changes": []
+    def get_forbidden_words(self) -> Dict[str, List[str]]:
+        """Return the forbidden words for reference."""
+        return {
+            "forbidden": self.FORBIDDEN_WORDS,
+            "restricted_product_words": self.PRODUCT_WORDS
         }
-
-        # Remove product words from title
-        if title:
-            for word in self.PRODUCT_WORDS:
-                if word in title.lower():
-                    title = re.sub(rf'\b{word}\b', '', title, flags=re.IGNORECASE)
-                    optimized["changes"].append(f"Removed '{word}' from title")
-            optimized["title"] = ' '.join(title.split())
-
-        # Remove forbidden words from all content
-        for field in ["title", "bullet_1", "bullet_2", "description"]:
-            content = optimized.get(field)
-            if content:
-                for word in self.FORBIDDEN_WORDS:
-                    if word in content.lower():
-                        content = re.sub(rf'\b{word}\b', '', content, flags=re.IGNORECASE)
-                        optimized["changes"].append(f"Removed '{word}' from {field}")
-                optimized[field] = ' '.join(content.split())
-
-        return optimized
