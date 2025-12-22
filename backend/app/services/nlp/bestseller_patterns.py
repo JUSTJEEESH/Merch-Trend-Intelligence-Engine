@@ -224,55 +224,758 @@ BESTSELLER_TEMPLATES = [
     "Be {X}",
 ]
 
-# Topics and activities to combine with patterns
-TRENDING_TOPICS = [
-    # Outdoor/Adventure
-    "hiking", "fishing", "camping", "hunting", "kayaking", "climbing",
-    "backpacking", "trail running", "mountain biking", "skiing", "snowboarding",
-    "surfing", "paddle boarding", "rock climbing", "off roading",
+# Comprehensive niche data with keywords, competition levels, and topics
+# Competition: low (undersaturated), medium (balanced), high (saturated)
+NICHE_DATA = {
+    # === BEVERAGES ===
+    "coffee": {
+        "topics": ["coffee", "espresso", "caffeine", "cold brew", "latte", "mocha", "cappuccino", "brew", "barista"],
+        "competition": "high",
+        "avg_bsr": 15000,
+    },
+    "tea": {
+        "topics": ["tea", "chai", "matcha", "herbal tea", "green tea", "tea lover", "tea time", "steep"],
+        "competition": "medium",
+        "avg_bsr": 45000,
+    },
+    "beer": {
+        "topics": ["beer", "craft beer", "IPA", "hops", "brewing", "brews", "lager", "ale", "stout", "pilsner"],
+        "competition": "medium",
+        "avg_bsr": 35000,
+    },
+    "wine": {
+        "topics": ["wine", "vino", "rosé", "merlot", "cabernet", "sommelier", "wine lover", "red wine", "white wine"],
+        "competition": "medium",
+        "avg_bsr": 40000,
+    },
+    "whiskey": {
+        "topics": ["whiskey", "bourbon", "scotch", "rye", "whisky", "single malt", "neat", "on the rocks"],
+        "competition": "low",
+        "avg_bsr": 75000,
+    },
+    "cocktails": {
+        "topics": ["cocktails", "mixology", "bartender", "margarita", "mojito", "martini", "happy hour"],
+        "competition": "low",
+        "avg_bsr": 85000,
+    },
 
-    # Fitness
-    "gym", "lifting", "running", "yoga", "crossfit", "weightlifting",
-    "marathon", "swimming", "cycling", "working out", "gains",
+    # === FITNESS ===
+    "fitness": {
+        "topics": ["gym", "workout", "gains", "lifting", "fit", "exercise", "train", "muscles", "sweat"],
+        "competition": "high",
+        "avg_bsr": 12000,
+    },
+    "yoga": {
+        "topics": ["yoga", "namaste", "zen", "meditation", "mindfulness", "stretch", "flow", "breathe", "asana"],
+        "competition": "medium",
+        "avg_bsr": 28000,
+    },
+    "running": {
+        "topics": ["running", "marathon", "5K", "10K", "runner", "jogging", "track", "pace", "miles"],
+        "competition": "medium",
+        "avg_bsr": 32000,
+    },
+    "crossfit": {
+        "topics": ["crossfit", "WOD", "box", "AMRAP", "burpees", "kettlebell", "snatch", "clean and jerk"],
+        "competition": "low",
+        "avg_bsr": 65000,
+    },
+    "weightlifting": {
+        "topics": ["weightlifting", "powerlifting", "deadlift", "squat", "bench", "barbell", "plates", "PR"],
+        "competition": "medium",
+        "avg_bsr": 42000,
+    },
+    "bodybuilding": {
+        "topics": ["bodybuilding", "physique", "bulk", "cut", "shred", "pump", "gains", "reps"],
+        "competition": "medium",
+        "avg_bsr": 38000,
+    },
+    "swimming": {
+        "topics": ["swimming", "swim", "pool", "laps", "freestyle", "butterfly", "backstroke", "swimmer"],
+        "competition": "low",
+        "avg_bsr": 72000,
+    },
+    "cycling": {
+        "topics": ["cycling", "bike", "bicycle", "cyclist", "peloton", "ride", "pedal", "tour"],
+        "competition": "medium",
+        "avg_bsr": 48000,
+    },
+    "pilates": {
+        "topics": ["pilates", "core", "reformer", "barre", "stretch", "tone", "strengthen"],
+        "competition": "low",
+        "avg_bsr": 82000,
+    },
 
-    # Hobbies
-    "gaming", "reading", "cooking", "baking", "gardening", "crafting",
-    "painting", "photography", "knitting", "crocheting", "woodworking",
-    "pottery", "sewing", "DIY", "collecting", "bird watching",
+    # === SPORTS ===
+    "golf": {
+        "topics": ["golf", "golfer", "tee", "fairway", "birdie", "bogey", "par", "putt", "green", "caddy"],
+        "competition": "medium",
+        "avg_bsr": 25000,
+    },
+    "baseball": {
+        "topics": ["baseball", "softball", "bat", "diamond", "pitch", "home run", "strikeout", "dugout"],
+        "competition": "medium",
+        "avg_bsr": 30000,
+    },
+    "football": {
+        "topics": ["football", "touchdown", "gridiron", "quarterback", "tackle", "end zone", "pigskin"],
+        "competition": "high",
+        "avg_bsr": 18000,
+    },
+    "basketball": {
+        "topics": ["basketball", "hoops", "court", "dunk", "three pointer", "rebound", "fast break"],
+        "competition": "high",
+        "avg_bsr": 20000,
+    },
+    "hockey": {
+        "topics": ["hockey", "puck", "ice", "rink", "slap shot", "goalie", "hat trick", "zamboni"],
+        "competition": "medium",
+        "avg_bsr": 35000,
+    },
+    "soccer": {
+        "topics": ["soccer", "football", "goal", "pitch", "striker", "keeper", "penalty", "match"],
+        "competition": "medium",
+        "avg_bsr": 33000,
+    },
+    "tennis": {
+        "topics": ["tennis", "racket", "court", "serve", "volley", "ace", "match point", "love"],
+        "competition": "low",
+        "avg_bsr": 68000,
+    },
+    "volleyball": {
+        "topics": ["volleyball", "spike", "dig", "set", "serve", "net", "beach", "bump"],
+        "competition": "low",
+        "avg_bsr": 75000,
+    },
+    "wrestling": {
+        "topics": ["wrestling", "mat", "pin", "takedown", "grapple", "singlet", "coach"],
+        "competition": "low",
+        "avg_bsr": 88000,
+    },
+    "boxing": {
+        "topics": ["boxing", "gloves", "ring", "knockout", "jab", "uppercut", "heavyweight", "rounds"],
+        "competition": "medium",
+        "avg_bsr": 45000,
+    },
+    "mma": {
+        "topics": ["MMA", "UFC", "jiu jitsu", "octagon", "submission", "tap out", "ground and pound"],
+        "competition": "medium",
+        "avg_bsr": 42000,
+    },
+    "pickleball": {
+        "topics": ["pickleball", "paddle", "dink", "kitchen", "volley", "court", "pickle"],
+        "competition": "low",
+        "avg_bsr": 55000,
+    },
 
-    # Beverages
-    "coffee", "wine", "beer", "tea", "whiskey", "bourbon", "cocktails",
-    "espresso", "cold brew", "mimosas", "margaritas",
+    # === OUTDOOR ACTIVITIES ===
+    "hiking": {
+        "topics": ["hiking", "trails", "mountains", "summit", "trek", "backpacking", "outdoors", "nature"],
+        "competition": "medium",
+        "avg_bsr": 28000,
+    },
+    "camping": {
+        "topics": ["camping", "campfire", "tent", "wilderness", "s'mores", "stargazing", "camp"],
+        "competition": "medium",
+        "avg_bsr": 32000,
+    },
+    "fishing": {
+        "topics": ["fishing", "bass", "trout", "casting", "reeling", "tackle", "angler", "reel", "bait", "lure"],
+        "competition": "medium",
+        "avg_bsr": 22000,
+    },
+    "hunting": {
+        "topics": ["hunting", "deer", "duck", "bow", "rifle", "game", "trophy", "hunter", "season"],
+        "competition": "medium",
+        "avg_bsr": 25000,
+    },
+    "kayaking": {
+        "topics": ["kayaking", "kayak", "paddle", "rapids", "river", "whitewater", "sea kayak"],
+        "competition": "low",
+        "avg_bsr": 78000,
+    },
+    "skiing": {
+        "topics": ["skiing", "ski", "slopes", "powder", "moguls", "chairlift", "après-ski", "black diamond"],
+        "competition": "medium",
+        "avg_bsr": 45000,
+    },
+    "snowboarding": {
+        "topics": ["snowboarding", "shred", "halfpipe", "powder", "terrain park", "carve"],
+        "competition": "low",
+        "avg_bsr": 65000,
+    },
+    "surfing": {
+        "topics": ["surfing", "waves", "surf", "barrel", "swell", "board", "beach", "ocean"],
+        "competition": "medium",
+        "avg_bsr": 38000,
+    },
+    "climbing": {
+        "topics": ["climbing", "rock climbing", "bouldering", "belay", "crag", "summit", "send"],
+        "competition": "low",
+        "avg_bsr": 72000,
+    },
+    "boating": {
+        "topics": ["boating", "boat", "yacht", "sailing", "marina", "captain", "anchor", "nautical"],
+        "competition": "low",
+        "avg_bsr": 68000,
+    },
+    "rv": {
+        "topics": ["RV", "RVing", "camper", "motorhome", "road trip", "campground", "nomad"],
+        "competition": "low",
+        "avg_bsr": 58000,
+    },
+    "offroading": {
+        "topics": ["offroading", "4x4", "jeep", "mud", "trail", "crawl", "overland"],
+        "competition": "low",
+        "avg_bsr": 62000,
+    },
 
-    # Pets
-    "dogs", "cats", "horses", "chickens", "goats", "bees",
-    "aquarium", "reptiles", "birds",
+    # === PETS ===
+    "dogs": {
+        "topics": ["dogs", "puppy", "fur baby", "good boy", "doggo", "pupper", "woof", "paws", "fetch"],
+        "competition": "high",
+        "avg_bsr": 8000,
+    },
+    "cats": {
+        "topics": ["cats", "kitten", "meow", "feline", "kitty", "purr", "whiskers", "paws"],
+        "competition": "high",
+        "avg_bsr": 10000,
+    },
+    "horses": {
+        "topics": ["horses", "equestrian", "riding", "stable", "mare", "stallion", "gallop", "trot"],
+        "competition": "medium",
+        "avg_bsr": 35000,
+    },
+    "chickens": {
+        "topics": ["chickens", "hens", "roosters", "coop", "eggs", "poultry", "flock", "backyard chickens"],
+        "competition": "low",
+        "avg_bsr": 52000,
+    },
+    "goats": {
+        "topics": ["goats", "farm", "herd", "kids", "billy", "nanny", "goat life"],
+        "competition": "low",
+        "avg_bsr": 65000,
+    },
+    "bees": {
+        "topics": ["bees", "beekeeping", "honey", "hive", "apiary", "beekeeper", "pollinator"],
+        "competition": "low",
+        "avg_bsr": 72000,
+    },
+    "birds": {
+        "topics": ["birds", "parrots", "parakeet", "feathers", "aviary", "birder", "finch"],
+        "competition": "low",
+        "avg_bsr": 78000,
+    },
+    "reptiles": {
+        "topics": ["reptiles", "snakes", "lizards", "gecko", "bearded dragon", "scales"],
+        "competition": "low",
+        "avg_bsr": 85000,
+    },
+    "rabbits": {
+        "topics": ["rabbits", "bunny", "hop", "hutch", "fluffy", "ears", "carrot"],
+        "competition": "low",
+        "avg_bsr": 68000,
+    },
+    "aquarium": {
+        "topics": ["aquarium", "fish", "tropical fish", "reef", "tank", "aquarist", "saltwater"],
+        "competition": "low",
+        "avg_bsr": 75000,
+    },
 
-    # Jobs/Professions
-    "nurse", "teacher", "mechanic", "welder", "trucker", "farmer",
-    "carpenter", "electrician", "plumber", "firefighter", "EMT",
-    "dispatcher", "server", "bartender", "chef", "hairstylist",
+    # === PROFESSIONS ===
+    "nursing": {
+        "topics": ["nursing", "nurse", "RN", "scrubs", "hospital", "patient care", "night shift", "healthcare"],
+        "competition": "high",
+        "avg_bsr": 12000,
+    },
+    "teaching": {
+        "topics": ["teaching", "teacher", "classroom", "students", "education", "school", "lesson", "grade"],
+        "competition": "high",
+        "avg_bsr": 14000,
+    },
+    "trucking": {
+        "topics": ["trucking", "trucker", "semi", "18 wheeler", "haul", "highway", "diesel", "rig"],
+        "competition": "medium",
+        "avg_bsr": 28000,
+    },
+    "firefighter": {
+        "topics": ["firefighter", "fireman", "fire department", "rescue", "hose", "ladder", "blaze"],
+        "competition": "medium",
+        "avg_bsr": 32000,
+    },
+    "police": {
+        "topics": ["police", "cop", "law enforcement", "badge", "patrol", "officer", "thin blue line"],
+        "competition": "medium",
+        "avg_bsr": 35000,
+    },
+    "emt": {
+        "topics": ["EMT", "paramedic", "ambulance", "first responder", "emergency", "medic"],
+        "competition": "low",
+        "avg_bsr": 55000,
+    },
+    "military": {
+        "topics": ["military", "veteran", "army", "navy", "marine", "air force", "service", "deployed"],
+        "competition": "medium",
+        "avg_bsr": 25000,
+    },
+    "mechanic": {
+        "topics": ["mechanic", "auto", "wrench", "garage", "car", "engine", "fix", "grease"],
+        "competition": "medium",
+        "avg_bsr": 38000,
+    },
+    "welder": {
+        "topics": ["welder", "welding", "sparks", "metal", "fabricate", "arc", "TIG", "MIG"],
+        "competition": "low",
+        "avg_bsr": 48000,
+    },
+    "electrician": {
+        "topics": ["electrician", "electrical", "wire", "voltage", "circuit", "power", "spark"],
+        "competition": "low",
+        "avg_bsr": 52000,
+    },
+    "plumber": {
+        "topics": ["plumber", "plumbing", "pipes", "wrench", "drain", "fix", "water"],
+        "competition": "low",
+        "avg_bsr": 58000,
+    },
+    "carpenter": {
+        "topics": ["carpenter", "woodworking", "build", "lumber", "saw", "craft", "hammer"],
+        "competition": "low",
+        "avg_bsr": 55000,
+    },
+    "farmer": {
+        "topics": ["farmer", "farming", "farm", "tractor", "harvest", "crops", "agriculture", "barn"],
+        "competition": "medium",
+        "avg_bsr": 32000,
+    },
+    "chef": {
+        "topics": ["chef", "cook", "kitchen", "culinary", "recipe", "gourmet", "foodie"],
+        "competition": "medium",
+        "avg_bsr": 40000,
+    },
+    "hairstylist": {
+        "topics": ["hairstylist", "hairdresser", "salon", "scissors", "style", "beauty", "hair"],
+        "competition": "low",
+        "avg_bsr": 62000,
+    },
+    "realtor": {
+        "topics": ["realtor", "real estate", "agent", "sold", "closing", "home", "property"],
+        "competition": "low",
+        "avg_bsr": 68000,
+    },
+    "lawyer": {
+        "topics": ["lawyer", "attorney", "law", "court", "legal", "justice", "case"],
+        "competition": "low",
+        "avg_bsr": 75000,
+    },
+    "accountant": {
+        "topics": ["accountant", "CPA", "tax", "numbers", "audit", "spreadsheet", "finance"],
+        "competition": "low",
+        "avg_bsr": 72000,
+    },
+    "engineer": {
+        "topics": ["engineer", "engineering", "design", "build", "problem solve", "technical"],
+        "competition": "low",
+        "avg_bsr": 65000,
+    },
+    "programmer": {
+        "topics": ["programmer", "developer", "coding", "code", "software", "debug", "compile", "stack overflow"],
+        "competition": "medium",
+        "avg_bsr": 42000,
+    },
+    "dispatcher": {
+        "topics": ["dispatcher", "911", "dispatch", "radio", "emergency", "calls", "operator"],
+        "competition": "low",
+        "avg_bsr": 78000,
+    },
+    "librarian": {
+        "topics": ["librarian", "library", "books", "reading", "shush", "catalog", "dewey"],
+        "competition": "low",
+        "avg_bsr": 82000,
+    },
+    "pilot": {
+        "topics": ["pilot", "aviation", "fly", "cockpit", "altitude", "runway", "captain"],
+        "competition": "low",
+        "avg_bsr": 68000,
+    },
+    "dental": {
+        "topics": ["dental", "dentist", "hygienist", "teeth", "smile", "floss", "cavity"],
+        "competition": "low",
+        "avg_bsr": 65000,
+    },
+    "pharmacy": {
+        "topics": ["pharmacy", "pharmacist", "prescription", "pills", "medicine", "dispense"],
+        "competition": "low",
+        "avg_bsr": 72000,
+    },
 
-    # Music
-    "guitar", "drums", "piano", "bass", "vinyl", "concerts",
-    "metal", "country", "rock", "jazz", "blues",
+    # === FAMILY ===
+    "mom": {
+        "topics": ["mom", "mama", "mother", "mommy", "mom life", "motherhood", "supermom"],
+        "competition": "high",
+        "avg_bsr": 5000,
+    },
+    "dad": {
+        "topics": ["dad", "father", "daddy", "papa", "dad life", "fatherhood", "dadhood"],
+        "competition": "high",
+        "avg_bsr": 8000,
+    },
+    "grandma": {
+        "topics": ["grandma", "grandmother", "nana", "granny", "mimi", "gram", "grandkids"],
+        "competition": "medium",
+        "avg_bsr": 22000,
+    },
+    "grandpa": {
+        "topics": ["grandpa", "grandfather", "papa", "gramps", "grandkids", "pop pop"],
+        "competition": "medium",
+        "avg_bsr": 28000,
+    },
+    "parenting": {
+        "topics": ["parenting", "parent", "kids", "toddler", "baby", "children", "raising"],
+        "competition": "high",
+        "avg_bsr": 15000,
+    },
+    "pregnancy": {
+        "topics": ["pregnancy", "pregnant", "expecting", "baby bump", "maternity", "due date"],
+        "competition": "medium",
+        "avg_bsr": 35000,
+    },
+    "twins": {
+        "topics": ["twins", "twin mom", "twin dad", "double trouble", "twinning"],
+        "competition": "low",
+        "avg_bsr": 58000,
+    },
+    "aunt": {
+        "topics": ["aunt", "auntie", "niece", "nephew", "cool aunt", "funcle"],
+        "competition": "low",
+        "avg_bsr": 48000,
+    },
+    "uncle": {
+        "topics": ["uncle", "funcle", "niece", "nephew", "cool uncle"],
+        "competition": "low",
+        "avg_bsr": 52000,
+    },
+    "sister": {
+        "topics": ["sister", "sis", "sibling", "sisters", "sisterhood"],
+        "competition": "low",
+        "avg_bsr": 55000,
+    },
+    "brother": {
+        "topics": ["brother", "bro", "sibling", "brothers", "brotherhood"],
+        "competition": "low",
+        "avg_bsr": 58000,
+    },
 
-    # Sports
-    "baseball", "football", "basketball", "hockey", "golf", "tennis",
-    "soccer", "volleyball", "softball", "wrestling", "boxing",
+    # === HOBBIES & INTERESTS ===
+    "gaming": {
+        "topics": ["gaming", "gamer", "video games", "controller", "level up", "respawn", "GG", "noob"],
+        "competition": "high",
+        "avg_bsr": 15000,
+    },
+    "reading": {
+        "topics": ["reading", "books", "bookworm", "bibliophile", "novel", "pages", "literature"],
+        "competition": "medium",
+        "avg_bsr": 35000,
+    },
+    "cooking": {
+        "topics": ["cooking", "cook", "kitchen", "recipe", "chef", "homemade", "from scratch"],
+        "competition": "medium",
+        "avg_bsr": 38000,
+    },
+    "baking": {
+        "topics": ["baking", "baker", "cupcakes", "cookies", "bread", "oven", "dough"],
+        "competition": "medium",
+        "avg_bsr": 42000,
+    },
+    "gardening": {
+        "topics": ["gardening", "garden", "plants", "flowers", "grow", "green thumb", "soil"],
+        "competition": "medium",
+        "avg_bsr": 32000,
+    },
+    "photography": {
+        "topics": ["photography", "photographer", "camera", "photo", "capture", "lens", "shot"],
+        "competition": "medium",
+        "avg_bsr": 40000,
+    },
+    "painting": {
+        "topics": ["painting", "artist", "art", "canvas", "brush", "create", "colors"],
+        "competition": "medium",
+        "avg_bsr": 45000,
+    },
+    "crafting": {
+        "topics": ["crafting", "crafter", "DIY", "handmade", "create", "maker", "craft"],
+        "competition": "medium",
+        "avg_bsr": 35000,
+    },
+    "knitting": {
+        "topics": ["knitting", "knit", "yarn", "needles", "stitches", "knitter", "wool"],
+        "competition": "low",
+        "avg_bsr": 55000,
+    },
+    "crocheting": {
+        "topics": ["crocheting", "crochet", "yarn", "hook", "stitches", "amigurumi"],
+        "competition": "low",
+        "avg_bsr": 52000,
+    },
+    "sewing": {
+        "topics": ["sewing", "sew", "seamstress", "fabric", "thread", "pattern", "stitch"],
+        "competition": "low",
+        "avg_bsr": 58000,
+    },
+    "quilting": {
+        "topics": ["quilting", "quilt", "quilter", "patchwork", "fabric", "blocks"],
+        "competition": "low",
+        "avg_bsr": 62000,
+    },
+    "woodworking": {
+        "topics": ["woodworking", "woodworker", "wood", "saw", "build", "lumber", "workshop"],
+        "competition": "low",
+        "avg_bsr": 48000,
+    },
+    "pottery": {
+        "topics": ["pottery", "ceramics", "clay", "wheel", "glaze", "kiln", "handmade"],
+        "competition": "low",
+        "avg_bsr": 72000,
+    },
+    "collecting": {
+        "topics": ["collecting", "collector", "collection", "vintage", "rare", "antique"],
+        "competition": "low",
+        "avg_bsr": 68000,
+    },
+    "vinyl": {
+        "topics": ["vinyl", "records", "turntable", "LP", "analog", "audiophile"],
+        "competition": "low",
+        "avg_bsr": 55000,
+    },
+    "birding": {
+        "topics": ["birding", "bird watching", "birder", "ornithology", "binoculars", "species"],
+        "competition": "low",
+        "avg_bsr": 78000,
+    },
 
-    # Food
-    "tacos", "pizza", "bacon", "sushi", "BBQ", "burgers", "steak",
-    "ramen", "chocolate", "cheese", "carbs",
+    # === MUSIC ===
+    "guitar": {
+        "topics": ["guitar", "guitarist", "acoustic", "electric", "riff", "strings", "chord", "strum"],
+        "competition": "medium",
+        "avg_bsr": 38000,
+    },
+    "drums": {
+        "topics": ["drums", "drummer", "beat", "sticks", "rhythm", "percussion", "kit"],
+        "competition": "low",
+        "avg_bsr": 52000,
+    },
+    "piano": {
+        "topics": ["piano", "pianist", "keys", "classical", "melody", "play", "concert"],
+        "competition": "low",
+        "avg_bsr": 58000,
+    },
+    "bass": {
+        "topics": ["bass", "bassist", "low end", "groove", "slap", "fretless"],
+        "competition": "low",
+        "avg_bsr": 68000,
+    },
+    "singing": {
+        "topics": ["singing", "singer", "vocals", "voice", "choir", "karaoke", "harmonize"],
+        "competition": "low",
+        "avg_bsr": 65000,
+    },
+    "dj": {
+        "topics": ["DJ", "turntable", "mix", "beats", "drop", "EDM", "rave"],
+        "competition": "low",
+        "avg_bsr": 72000,
+    },
+    "metal": {
+        "topics": ["metal", "heavy metal", "headbang", "mosh", "thrash", "shred"],
+        "competition": "low",
+        "avg_bsr": 48000,
+    },
+    "country": {
+        "topics": ["country", "country music", "nashville", "honky tonk", "twang", "boots"],
+        "competition": "medium",
+        "avg_bsr": 35000,
+    },
+    "hiphop": {
+        "topics": ["hip hop", "rap", "MC", "beats", "flow", "rhyme", "bars"],
+        "competition": "medium",
+        "avg_bsr": 42000,
+    },
 
-    # Lifestyle
-    "naps", "sleep", "silence", "alone time", "books", "plants",
-    "true crime", "podcasts", "Netflix", "snacks",
+    # === LIFESTYLE ===
+    "introvert": {
+        "topics": ["introvert", "antisocial", "alone time", "homebody", "quiet", "solitude"],
+        "competition": "medium",
+        "avg_bsr": 28000,
+    },
+    "sarcasm": {
+        "topics": ["sarcasm", "sarcastic", "sass", "snark", "wit", "dry humor"],
+        "competition": "high",
+        "avg_bsr": 18000,
+    },
+    "anxiety": {
+        "topics": ["anxiety", "anxious", "overthinking", "worry", "stress", "mental health"],
+        "competition": "medium",
+        "avg_bsr": 32000,
+    },
+    "truecrime": {
+        "topics": ["true crime", "murder mystery", "podcast", "documentary", "serial killer", "case files"],
+        "competition": "medium",
+        "avg_bsr": 35000,
+    },
+    "astrology": {
+        "topics": ["astrology", "zodiac", "horoscope", "mercury retrograde", "birth chart", "stars"],
+        "competition": "medium",
+        "avg_bsr": 38000,
+    },
+    "tarot": {
+        "topics": ["tarot", "tarot cards", "reading", "divination", "spiritual", "deck"],
+        "competition": "low",
+        "avg_bsr": 55000,
+    },
+    "witchy": {
+        "topics": ["witch", "witchy", "magic", "spells", "coven", "occult", "wicca"],
+        "competition": "medium",
+        "avg_bsr": 42000,
+    },
+    "crystals": {
+        "topics": ["crystals", "healing crystals", "energy", "amethyst", "quartz", "chakra"],
+        "competition": "low",
+        "avg_bsr": 58000,
+    },
+    "minimalist": {
+        "topics": ["minimalist", "minimal", "simple", "less is more", "declutter", "essentialism"],
+        "competition": "low",
+        "avg_bsr": 62000,
+    },
+    "vegan": {
+        "topics": ["vegan", "plant based", "cruelty free", "herbivore", "veganism", "no meat"],
+        "competition": "medium",
+        "avg_bsr": 45000,
+    },
+    "keto": {
+        "topics": ["keto", "ketogenic", "low carb", "bacon", "fat adapted", "macros"],
+        "competition": "low",
+        "avg_bsr": 52000,
+    },
 
-    # Moods/Traits
-    "sarcasm", "introvert", "overthinking", "anxiety", "chaos",
-    "drama", "petty", "savage", "awkward", "weird",
-]
+    # === AGE/MILESTONES ===
+    "retirement": {
+        "topics": ["retired", "retirement", "retired life", "no alarm clock", "every day is saturday"],
+        "competition": "medium",
+        "avg_bsr": 28000,
+    },
+    "vintage": {
+        "topics": ["vintage", "classic", "retro", "oldschool", "throwback", "antique"],
+        "competition": "medium",
+        "avg_bsr": 35000,
+    },
+    "birthday": {
+        "topics": ["birthday", "bday", "celebrate", "party", "age", "another year"],
+        "competition": "high",
+        "avg_bsr": 15000,
+    },
+
+    # === FOOD ===
+    "tacos": {
+        "topics": ["tacos", "taco", "tuesday", "mexican", "salsa", "guac", "burrito"],
+        "competition": "medium",
+        "avg_bsr": 35000,
+    },
+    "pizza": {
+        "topics": ["pizza", "pepperoni", "slice", "pie", "cheesy", "italian"],
+        "competition": "medium",
+        "avg_bsr": 38000,
+    },
+    "bacon": {
+        "topics": ["bacon", "crispy", "breakfast", "pork", "sizzle", "meat candy"],
+        "competition": "medium",
+        "avg_bsr": 42000,
+    },
+    "bbq": {
+        "topics": ["BBQ", "barbecue", "grill", "smoke", "ribs", "brisket", "pitmaster"],
+        "competition": "medium",
+        "avg_bsr": 35000,
+    },
+    "sushi": {
+        "topics": ["sushi", "sashimi", "roll", "wasabi", "chopsticks", "omakase"],
+        "competition": "low",
+        "avg_bsr": 55000,
+    },
+    "chocolate": {
+        "topics": ["chocolate", "cocoa", "sweet", "dessert", "chocoholic", "dark chocolate"],
+        "competition": "medium",
+        "avg_bsr": 42000,
+    },
+
+    # === SEASONAL ===
+    "christmas": {
+        "topics": ["christmas", "xmas", "santa", "holiday", "festive", "jolly", "merry"],
+        "competition": "high",
+        "avg_bsr": 8000,
+    },
+    "halloween": {
+        "topics": ["halloween", "spooky", "scary", "witch", "ghost", "pumpkin", "october"],
+        "competition": "high",
+        "avg_bsr": 10000,
+    },
+    "fall": {
+        "topics": ["fall", "autumn", "pumpkin spice", "leaves", "cozy", "sweater weather"],
+        "competition": "medium",
+        "avg_bsr": 25000,
+    },
+    "summer": {
+        "topics": ["summer", "beach", "sunshine", "vacation", "pool", "tan", "vibes"],
+        "competition": "medium",
+        "avg_bsr": 28000,
+    },
+    "spring": {
+        "topics": ["spring", "flowers", "bloom", "fresh", "renewal", "garden"],
+        "competition": "low",
+        "avg_bsr": 55000,
+    },
+    "winter": {
+        "topics": ["winter", "snow", "cold", "cozy", "hot cocoa", "frost"],
+        "competition": "medium",
+        "avg_bsr": 32000,
+    },
+
+    # === LOCATION/LIFESTYLE ===
+    "beach": {
+        "topics": ["beach", "ocean", "sand", "waves", "coastal", "salt life", "shore"],
+        "competition": "medium",
+        "avg_bsr": 28000,
+    },
+    "mountains": {
+        "topics": ["mountains", "peaks", "alpine", "summit", "elevation", "highlands"],
+        "competition": "medium",
+        "avg_bsr": 32000,
+    },
+    "lake": {
+        "topics": ["lake", "lake life", "lakeside", "cabin", "dock", "pontoon"],
+        "competition": "low",
+        "avg_bsr": 45000,
+    },
+    "texas": {
+        "topics": ["Texas", "Texan", "lone star", "y'all", "howdy", "everything's bigger"],
+        "competition": "medium",
+        "avg_bsr": 28000,
+    },
+    "florida": {
+        "topics": ["Florida", "sunshine state", "palm trees", "beach", "gator"],
+        "competition": "medium",
+        "avg_bsr": 32000,
+    },
+    "midwest": {
+        "topics": ["midwest", "corn", "flyover", "heartland", "ope", "you betcha"],
+        "competition": "low",
+        "avg_bsr": 55000,
+    },
+}
+
+# Generate TRENDING_TOPICS from all niche data
+TRENDING_TOPICS = []
+for niche_data in NICHE_DATA.values():
+    TRENDING_TOPICS.extend(niche_data["topics"])
+TRENDING_TOPICS = list(set(TRENDING_TOPICS))  # Remove duplicates
 
 # Classic bestsellers - specific phrases that have sold millions
 CLASSIC_BESTSELLERS = [
@@ -578,3 +1281,37 @@ def get_all_topics():
 def get_niche_bestsellers(niche: str):
     """Get bestsellers for a specific niche."""
     return NICHE_BESTSELLERS.get(niche.lower(), [])
+
+def get_niche_data(niche: str):
+    """Get full niche data including topics, competition, and BSR."""
+    return NICHE_DATA.get(niche.lower(), None)
+
+def get_niche_topics(niche: str):
+    """Get topics for a specific niche."""
+    data = NICHE_DATA.get(niche.lower())
+    return data["topics"] if data else []
+
+def get_niche_competition(niche: str):
+    """Get competition level for a niche (low, medium, high)."""
+    data = NICHE_DATA.get(niche.lower())
+    return data["competition"] if data else "unknown"
+
+def get_niche_bsr(niche: str):
+    """Get average BSR for a niche."""
+    data = NICHE_DATA.get(niche.lower())
+    return data["avg_bsr"] if data else None
+
+def get_all_niches():
+    """Get list of all available niches."""
+    return list(NICHE_DATA.keys())
+
+def get_niches_by_competition(competition: str):
+    """Get niches filtered by competition level."""
+    return [
+        niche for niche, data in NICHE_DATA.items()
+        if data["competition"] == competition.lower()
+    ]
+
+def get_low_competition_niches():
+    """Get all low competition niches (gold mines!)."""
+    return get_niches_by_competition("low")

@@ -10,8 +10,14 @@ from .bestseller_patterns import (
     TRENDING_TOPICS,
     CLASSIC_BESTSELLERS,
     NICHE_BESTSELLERS,
+    NICHE_DATA,
     WORD_VARIATIONS,
     get_all_bestseller_phrases,
+    get_niche_topics,
+    get_niche_data,
+    get_niche_competition,
+    get_niche_bsr,
+    get_all_niches,
 )
 from .variation_generator import VariationGenerator
 
@@ -39,7 +45,7 @@ class IdeaGenerator:
 
         Args:
             count: Number of ideas to generate (max 500)
-            niches: Optional list of niches to focus on
+            niches: Optional list of niches to focus on (STRICT - only these niches)
             include_classics: Include proven bestseller phrases
             include_generated: Include pattern-generated phrases
             include_variations: Include variations of bestsellers
@@ -52,19 +58,28 @@ class IdeaGenerator:
         ideas = []
         categories = {}
 
+        # Normalize niches
+        target_niches = None
+        if niches:
+            if isinstance(niches, str):
+                target_niches = [niches.lower()]
+            else:
+                target_niches = [n.lower() for n in niches]
+
         # 1. Add classic bestsellers (proven winners)
         if include_classics:
-            classics = self._get_classic_bestsellers(niches)
+            classics = self._get_classic_bestsellers(target_niches)
             for phrase in classics:
-                idea = self._create_idea(phrase, "classic", self._detect_niche(phrase))
+                detected = self._detect_niche(phrase)
+                idea = self._create_idea(phrase, "classic", detected)
                 ideas.append(idea)
             categories["classics"] = len(classics)
 
-        # 2. Generate from templates + topics
+        # 2. Generate from templates + topics (STRICT niche mode)
         if include_generated:
             generated = self._generate_from_templates(
-                count=count // 2,
-                niches=niches,
+                count=count,  # Generate more to ensure enough after filtering
+                niches=target_niches,
                 creativity=creativity_level
             )
             ideas.extend(generated)
@@ -82,10 +97,36 @@ class IdeaGenerator:
         # 4. Generate trending combinations
         trending = self._generate_trending_combinations(
             count=count // 4,
-            niches=niches
+            niches=target_niches
         )
         ideas.extend(trending)
         categories["trending"] = len(trending)
+
+        # STRICT NICHE FILTERING: Only keep ideas that match target niches
+        if target_niches:
+            ideas = [
+                idea for idea in ideas
+                if idea.get("niche", "general").lower() in target_niches
+                or idea.get("niche", "general") == "general"
+            ]
+            # Re-detect niches for general ones and filter more strictly
+            filtered_ideas = []
+            for idea in ideas:
+                phrase_lower = idea["phrase"].lower()
+                # Check if phrase contains any topic from target niches
+                matches_niche = False
+                for niche in target_niches:
+                    niche_topics = get_niche_topics(niche)
+                    for topic in niche_topics:
+                        if topic.lower() in phrase_lower:
+                            idea["niche"] = niche
+                            matches_niche = True
+                            break
+                    if matches_niche:
+                        break
+                if matches_niche:
+                    filtered_ideas.append(idea)
+            ideas = filtered_ideas
 
         # Deduplicate while preserving order
         seen = set()
@@ -106,12 +147,24 @@ class IdeaGenerator:
         by_category = self._group_by_category(unique_ideas)
         by_niche = self._group_by_niche(unique_ideas)
 
+        # Get niche metadata
+        niche_info = {}
+        if target_niches:
+            for niche in target_niches:
+                data = get_niche_data(niche)
+                if data:
+                    niche_info[niche] = {
+                        "competition": data["competition"],
+                        "avg_bsr": data["avg_bsr"],
+                    }
+
         return {
             "total": len(unique_ideas),
             "generated_at": datetime.utcnow().isoformat(),
             "ideas": unique_ideas,
             "by_category": by_category,
             "by_niche": by_niche,
+            "niche_info": niche_info,
             "stats": {
                 "categories": categories,
                 "unique_niches": len(by_niche),
@@ -286,33 +339,27 @@ class IdeaGenerator:
 
         return ideas
 
-    def _get_topics_for_niches(self, niches: List[str]) -> List[str]:
-        """Get relevant topics for given niches."""
-        niche_topics = {
-            "outdoors": ["hiking", "camping", "fishing", "hunting", "kayaking", "mountains", "trails"],
-            "fitness": ["gym", "lifting", "running", "yoga", "crossfit", "gains", "workout"],
-            "coffee": ["coffee", "espresso", "caffeine", "cold brew", "latte", "brew"],
-            "pets": ["dogs", "cats", "puppies", "kittens", "fur babies", "rescue"],
-            "parenting": ["mom life", "dad life", "kids", "toddlers", "babies", "parenting"],
-            "gaming": ["gaming", "video games", "controller", "level up", "respawn"],
-            "nursing": ["nursing", "scrubs", "night shift", "patients", "healthcare"],
-            "teaching": ["teaching", "students", "classroom", "education", "school"],
-            "beer": ["beer", "craft beer", "IPA", "hops", "brewing", "brews"],
-            "wine": ["wine", "vino", "rosé", "merlot", "cabernet", "sommelier"],
-            "fishing": ["fishing", "bass", "trout", "casting", "reeling", "tackle"],
-            "hunting": ["hunting", "deer", "duck", "bow", "rifle", "game"],
-        }
+    def _get_topics_for_niches(self, niches: List[str], strict: bool = True) -> List[str]:
+        """Get relevant topics for given niches.
 
+        Args:
+            niches: List of niche names
+            strict: If True, ONLY return topics for specified niches (no general topics)
+        """
         topics = []
         for niche in niches:
             niche_lower = niche.lower()
-            if niche_lower in niche_topics:
-                topics.extend(niche_topics[niche_lower])
+            # Get topics from comprehensive NICHE_DATA
+            niche_topics = get_niche_topics(niche_lower)
+            if niche_topics:
+                topics.extend(niche_topics)
             # Also add the niche itself
             topics.append(niche_lower)
 
-        # Add some general topics
-        topics.extend(random.sample(TRENDING_TOPICS, min(20, len(TRENDING_TOPICS))))
+        # STRICT MODE: Only use niche-specific topics, no general mixing
+        if not strict:
+            # Add some general topics only if not in strict mode
+            topics.extend(random.sample(TRENDING_TOPICS, min(20, len(TRENDING_TOPICS))))
 
         return list(set(topics))
 
@@ -323,9 +370,22 @@ class IdeaGenerator:
         niche: str,
         source_phrase: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Create an idea dictionary with metadata."""
+        """Create an idea dictionary with metadata including competition and BSR."""
         # Calculate potential score based on phrase characteristics
         score = self._calculate_potential(phrase)
+
+        # Get competition and BSR data for the niche
+        niche_data = get_niche_data(niche)
+        competition = niche_data["competition"] if niche_data else "unknown"
+        avg_bsr = niche_data["avg_bsr"] if niche_data else None
+
+        # Estimate BSR with some variance
+        estimated_bsr = None
+        if avg_bsr:
+            # Higher scoring phrases get better BSR estimates
+            score_factor = 1 - (score / 200)  # 0.5 to 1.0 range
+            variance = random.uniform(0.7, 1.3)
+            estimated_bsr = int(avg_bsr * score_factor * variance)
 
         return {
             "phrase": phrase,
@@ -335,6 +395,9 @@ class IdeaGenerator:
             "word_count": len(phrase.split()),
             "char_count": len(phrase),
             "source": source_phrase,
+            "competition": competition,
+            "estimated_bsr": estimated_bsr,
+            "discovered_at": datetime.utcnow().isoformat(),
         }
 
     def _calculate_potential(self, phrase: str) -> int:
@@ -376,27 +439,15 @@ class IdeaGenerator:
         return max(0, min(100, score))
 
     def _detect_niche(self, phrase: str) -> str:
-        """Detect the likely niche of a phrase."""
+        """Detect the likely niche of a phrase using comprehensive NICHE_DATA."""
         phrase_lower = phrase.lower()
 
-        niche_keywords = {
-            "fitness": ["gym", "workout", "gains", "lift", "run", "sweat", "muscle", "crossfit", "yoga"],
-            "coffee": ["coffee", "caffeine", "espresso", "latte", "brew", "decaf", "mocha"],
-            "parenting": ["mom", "dad", "parent", "child", "baby", "mama", "papa", "kids"],
-            "pets": ["dog", "cat", "pet", "paw", "bark", "meow", "puppy", "kitty", "fur"],
-            "nursing": ["nurse", "scrubs", "hospital", "patient", "shift", "rn", "healthcare"],
-            "teaching": ["teacher", "school", "class", "student", "education", "teach"],
-            "gaming": ["game", "gamer", "play", "level", "xbox", "playstation", "respawn"],
-            "outdoors": ["hike", "camp", "mountain", "trail", "nature", "outdoor", "adventure"],
-            "fishing": ["fish", "catch", "bait", "reel", "lake", "boat", "angler", "bass"],
-            "hunting": ["hunt", "deer", "duck", "bow", "rifle", "game", "trophy"],
-            "beer": ["beer", "brew", "hops", "ipa", "craft", "ale", "lager"],
-            "wine": ["wine", "vino", "merlot", "rosé", "cabernet", "sommelier"],
-        }
-
-        for niche, keywords in niche_keywords.items():
-            for keyword in keywords:
-                if keyword in phrase_lower:
+        # Check against all niches in NICHE_DATA
+        for niche, data in NICHE_DATA.items():
+            topics = data.get("topics", [])
+            for topic in topics:
+                # Check if topic appears as a word in the phrase
+                if topic.lower() in phrase_lower:
                     return niche
 
         return "general"
