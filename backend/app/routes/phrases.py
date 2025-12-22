@@ -24,31 +24,38 @@ trend_scorer = TrendScorer()
 async def list_phrases(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
-    niche: Optional[str] = None,
-    min_trend_score: Optional[float] = None,
-    max_risk_score: Optional[float] = None,
-    min_word_count: Optional[int] = None,
-    max_word_count: Optional[int] = None,
-    is_safe: Optional[bool] = True,
-    is_pattern: Optional[bool] = None,
+    niche: Optional[str] = Query(None),
+    min_trend_score: Optional[str] = Query(None),
+    max_risk_score: Optional[str] = Query(None),
+    min_word_count: Optional[str] = Query(None),
+    max_word_count: Optional[str] = Query(None),
+    is_safe: Optional[bool] = Query(None),
+    is_pattern: Optional[bool] = Query(None),
     sort_by: str = Query("trend_score", regex="^(trend_score|frequency|first_seen|risk_score)$"),
     sort_order: str = Query("desc", regex="^(asc|desc)$"),
     db: Session = Depends(get_db)
 ):
     """List phrases with filtering and pagination."""
+    # Convert empty strings to None and parse numbers
+    niche = niche if niche and niche.strip() else None
+    min_trend_val = float(min_trend_score) if min_trend_score and min_trend_score.strip() else None
+    max_risk_val = float(max_risk_score) if max_risk_score and max_risk_score.strip() else None
+    min_word_val = int(min_word_count) if min_word_count and min_word_count.strip() else None
+    max_word_val = int(max_word_count) if max_word_count and max_word_count.strip() else None
+
     query = db.query(Phrase)
 
     # Apply filters
     if niche:
         query = query.filter(Phrase.niche == niche)
-    if min_trend_score is not None:
-        query = query.filter(Phrase.trend_score >= min_trend_score)
-    if max_risk_score is not None:
-        query = query.filter(Phrase.risk_score <= max_risk_score)
-    if min_word_count is not None:
-        query = query.filter(Phrase.word_count >= min_word_count)
-    if max_word_count is not None:
-        query = query.filter(Phrase.word_count <= max_word_count)
+    if min_trend_val is not None:
+        query = query.filter(Phrase.trend_score >= min_trend_val)
+    if max_risk_val is not None:
+        query = query.filter(Phrase.risk_score <= max_risk_val)
+    if min_word_val is not None:
+        query = query.filter(Phrase.word_count >= min_word_val)
+    if max_word_val is not None:
+        query = query.filter(Phrase.word_count <= max_word_val)
     if is_safe is not None:
         query = query.filter(Phrase.is_safe == is_safe)
     if is_pattern is not None:
