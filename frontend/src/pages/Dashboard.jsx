@@ -228,12 +228,46 @@ const NICHE_CATEGORIES = [
 
 // Simulated trending data (would come from API in production)
 const TRENDING_NOW = [
+  // Mental Health / Self-Care (HUGE right now)
   { phrase: "In my healing era", bsr: 1250, trend: "+340%", platform: "Amazon" },
   { phrase: "Overstimulated moms club", bsr: 890, trend: "+280%", platform: "Amazon" },
   { phrase: "Anxious but hopeful", bsr: 2100, trend: "+195%", platform: "Etsy" },
   { phrase: "Professional overthinker", bsr: 1680, trend: "+175%", platform: "Amazon" },
   { phrase: "Touch grass enthusiast", bsr: 3200, trend: "+160%", platform: "Amazon" },
   { phrase: "Emotionally unavailable", bsr: 2800, trend: "+145%", platform: "Etsy" },
+  // TikTok Viral Trends
+  { phrase: "Very demure very mindful", bsr: 450, trend: "+890%", platform: "TikTok" },
+  { phrase: "Delulu is the solulu", bsr: 780, trend: "+520%", platform: "TikTok" },
+  { phrase: "Its giving main character", bsr: 1100, trend: "+380%", platform: "TikTok" },
+  { phrase: "No thoughts just vibes", bsr: 920, trend: "+290%", platform: "Amazon" },
+  { phrase: "Roman Empire era", bsr: 1450, trend: "+245%", platform: "TikTok" },
+  { phrase: "Chronically online", bsr: 1890, trend: "+210%", platform: "Amazon" },
+  { phrase: "Unhinged behavior", bsr: 2200, trend: "+185%", platform: "Etsy" },
+  { phrase: "Girl math approved", bsr: 1350, trend: "+320%", platform: "TikTok" },
+  { phrase: "Boy math doesnt add up", bsr: 1680, trend: "+275%", platform: "TikTok" },
+  // Millennial/Gen Z Humor
+  { phrase: "Surviving on spite and coffee", bsr: 1750, trend: "+165%", platform: "Amazon" },
+  { phrase: "Running on iced coffee and anxiety", bsr: 980, trend: "+225%", platform: "Amazon" },
+  { phrase: "Mentally checked out", bsr: 2100, trend: "+155%", platform: "Etsy" },
+  { phrase: "Currently in my flop era", bsr: 1560, trend: "+195%", platform: "TikTok" },
+  { phrase: "Hot girl with cold heart", bsr: 2400, trend: "+140%", platform: "Amazon" },
+  { phrase: "Soft launch relationship", bsr: 1890, trend: "+175%", platform: "TikTok" },
+  { phrase: "Hard launched into chaos", bsr: 2650, trend: "+125%", platform: "Etsy" },
+  // Relatable Life Moments
+  { phrase: "Too tired to function", bsr: 1200, trend: "+180%", platform: "Amazon" },
+  { phrase: "My toxic trait is", bsr: 980, trend: "+265%", platform: "TikTok" },
+  { phrase: "I have no hobbies I just exist", bsr: 1450, trend: "+195%", platform: "Amazon" },
+  { phrase: "This is my last warning", bsr: 2100, trend: "+145%", platform: "Etsy" },
+  { phrase: "Powered by audacity", bsr: 1780, trend: "+155%", platform: "Amazon" },
+  { phrase: "Weaponized incompetence detector", bsr: 1350, trend: "+210%", platform: "TikTok" },
+  { phrase: "Not your neurotypical", bsr: 890, trend: "+285%", platform: "Amazon" },
+  { phrase: "Autistic and iconic", bsr: 1120, trend: "+250%", platform: "Etsy" },
+  // Work/Career Humor
+  { phrase: "Act your wage", bsr: 560, trend: "+420%", platform: "TikTok" },
+  { phrase: "Quiet quitting champion", bsr: 1250, trend: "+195%", platform: "Amazon" },
+  { phrase: "This meeting could be an email", bsr: 1680, trend: "+150%", platform: "Amazon" },
+  { phrase: "Burnt out but showing up", bsr: 1890, trend: "+165%", platform: "Etsy" },
+  { phrase: "Working from bed", bsr: 2450, trend: "+125%", platform: "Amazon" },
 ]
 
 const STORAGE_KEY = 'merch_engine_ideas'
@@ -457,27 +491,56 @@ export default function Dashboard() {
             <TrendingUp size={18} className="text-emerald-400" />
             <h2 className="text-base font-semibold text-zinc-200">Trending Now</h2>
             <span className="text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full">Live</span>
+            <span className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full">{TRENDING_NOW.length} phrases</span>
           </div>
-          <span className="text-xs text-zinc-500">Updated hourly</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded">Amazon</span>
+              <span className="px-2 py-1 bg-pink-500/10 text-pink-400 rounded">TikTok</span>
+              <span className="px-2 py-1 bg-orange-500/10 text-orange-400 rounded">Etsy</span>
+            </div>
+            <span className="text-xs text-zinc-500">Updated hourly</span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {TRENDING_NOW.map((item, idx) => (
-            <div
-              key={idx}
-              onClick={() => handlePhraseClick(item.phrase)}
-              className="group bg-zinc-800/50 rounded-xl p-3 hover:bg-zinc-800 transition-all cursor-pointer border border-transparent hover:border-zinc-700"
-            >
-              <p className="text-sm font-medium text-zinc-200 mb-2 line-clamp-2">{item.phrase}</p>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 text-xs text-emerald-400">
-                  <ArrowUpRight size={12} />
-                  <span>{item.trend}</span>
+        {/* Scrollable trending grid */}
+        <div className="max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {TRENDING_NOW.sort((a, b) => parseInt(b.trend) - parseInt(a.trend)).map((item, idx) => (
+              <div
+                key={idx}
+                onClick={() => handlePhraseClick(item.phrase)}
+                className={`group bg-zinc-800/50 rounded-xl p-3 hover:bg-zinc-800 transition-all cursor-pointer border border-transparent hover:border-zinc-700 ${
+                  idx < 5 ? 'ring-1 ring-emerald-500/30' : ''
+                }`}
+              >
+                {idx < 5 && (
+                  <div className="flex items-center gap-1 mb-2">
+                    <Flame size={12} className="text-orange-400" />
+                    <span className="text-[10px] text-orange-400 font-medium">HOT</span>
+                  </div>
+                )}
+                <p className="text-sm font-medium text-zinc-200 mb-2 line-clamp-2">{item.phrase}</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1 text-xs text-emerald-400">
+                    <ArrowUpRight size={12} />
+                    <span className="font-medium">{item.trend}</span>
+                  </div>
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${
+                    item.platform === 'TikTok' ? 'bg-pink-500/10 text-pink-400' :
+                    item.platform === 'Etsy' ? 'bg-orange-500/10 text-orange-400' :
+                    'bg-blue-500/10 text-blue-400'
+                  }`}>{item.platform}</span>
                 </div>
-                <span className="text-xs text-zinc-500">{item.platform}</span>
+                {item.bsr && (
+                  <div className="flex items-center gap-1 mt-2 text-[10px] text-zinc-500">
+                    <BarChart3 size={10} />
+                    <span>BSR ~{item.bsr.toLocaleString()}</span>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 

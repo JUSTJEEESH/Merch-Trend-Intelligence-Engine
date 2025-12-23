@@ -48,6 +48,253 @@ class TrademarkChecker:
         "supreme", "off-white", "bape", "supreme",
     }
 
+    # Famous trademarked slogans/phrases - THESE ARE NOT SAFE TO USE
+    BLOCKED_SLOGANS = {
+        # Nike
+        "just do it",
+        # McDonald's
+        "im lovin it", "i'm lovin it", "im loving it", "i'm loving it",
+        # Apple
+        "think different",
+        # L'Oreal
+        "because youre worth it", "because you're worth it",
+        # De Beers
+        "a diamond is forever",
+        # Mastercard
+        "priceless", "there are some things money cant buy",
+        # Verizon
+        "can you hear me now",
+        # Subway
+        "eat fresh",
+        # Burger King
+        "have it your way",
+        # KFC
+        "finger lickin good", "finger lickin' good",
+        # M&Ms
+        "melts in your mouth",
+        # Skittles
+        "taste the rainbow",
+        # Red Bull
+        "gives you wings", "red bull gives you wings",
+        # Gatorade
+        "is it in you",
+        # Las Vegas
+        "what happens in vegas",
+        # State Farm
+        "like a good neighbor",
+        # Allstate
+        "youre in good hands", "you're in good hands",
+        # Geico
+        "15 minutes could save you",
+        # Maybelline
+        "maybe shes born with it", "maybe she's born with it",
+        # Kay Jewelers
+        "every kiss begins with kay",
+        # Bounty
+        "the quicker picker upper",
+        # Wheaties
+        "breakfast of champions",
+        # Rice Krispies
+        "snap crackle pop",
+        # Frosted Flakes
+        "theyre great", "they're great", "theyre grrreat",
+        # Got Milk
+        "got milk",
+        # Capital One
+        "whats in your wallet", "what's in your wallet",
+        # BMW
+        "the ultimate driving machine",
+        # Audi
+        "vorsprung durch technik",
+        # Lexus
+        "the relentless pursuit of perfection",
+        # Toyota
+        "lets go places", "let's go places",
+        # Ford
+        "built ford tough",
+        # Chevy
+        "find new roads",
+        # Dodge
+        "grab life by the horns",
+        # Energizer
+        "keeps going and going",
+        # Duracell
+        "trusted everywhere",
+        # Gillette
+        "the best a man can get",
+        # Disneyland
+        "the happiest place on earth",
+        # Disney
+        "where dreams come true",
+        # Toys R Us
+        "i dont wanna grow up",
+        # Army
+        "be all you can be",
+        # Marines
+        "the few the proud",
+        # New York
+        "i love ny", "i heart ny",
+        # Adidas
+        "impossible is nothing",
+        # Reebok
+        "i am what i am",
+        # Under Armour
+        "i will", "protect this house",
+        # Taco Bell
+        "think outside the bun", "live mas",
+        # Wendys
+        "wheres the beef", "where's the beef",
+        # Arby's
+        "we have the meats",
+        # Chick-fil-A
+        "eat mor chikin",
+        # Home Depot
+        "you can do it we can help",
+        # Lowes
+        "never stop improving",
+        # Target
+        "expect more pay less",
+        # Walmart
+        "save money live better",
+        # Best Buy
+        "expert service unbeatable price",
+        # FedEx
+        "when it absolutely positively",
+        # UPS
+        "what can brown do for you",
+        # USPS
+        "neither snow nor rain",
+        # Visa
+        "its everywhere you want to be",
+        # American Express
+        "dont leave home without it",
+        # Staples
+        "that was easy",
+        # Office Depot
+        "taking care of business",
+        # General Electric
+        "imagination at work",
+        # 3M
+        "innovation",
+        # Microsoft
+        "be what's next", "your potential our passion",
+        # Intel
+        "intel inside",
+        # AMD
+        "the future is fusion",
+        # HP
+        "invent",
+        # Dell
+        "the power to do more",
+        # AT&T
+        "rethink possible", "reach out and touch someone",
+        # T-Mobile
+        "get more",
+        # Sprint
+        "the now network",
+        # Coca-Cola
+        "open happiness", "taste the feeling", "its the real thing",
+        # Pepsi
+        "the choice of a new generation", "for those who think young",
+        # Dr Pepper
+        "be a pepper", "its not for women",
+        # Mountain Dew
+        "do the dew",
+        # Sprite
+        "obey your thirst",
+        # 7-Up
+        "the uncola",
+        # Budweiser
+        "king of beers", "this buds for you", "whassup",
+        # Miller
+        "its miller time",
+        # Coors
+        "the banquet beer",
+        # Corona
+        "find your beach",
+        # Heineken
+        "open your world",
+        # Jack Daniels
+        "old no 7",
+        # Jim Beam
+        "bold choice",
+        # Johnnie Walker
+        "keep walking",
+        # Absolut
+        "absolut perfection",
+        # Grey Goose
+        "fly beyond",
+        # Patron
+        "simply perfect",
+        # HBO
+        "its not tv its hbo",
+        # Netflix
+        "see whats next",
+        # Amazon
+        "and you're done", "work hard have fun make history",
+        # Google
+        "dont be evil",
+        # Facebook
+        "move fast and break things",
+        # Twitter
+        "whats happening",
+        # YouTube
+        "broadcast yourself",
+        # TikTok
+        "make your day",
+        # Snapchat
+        "life's more fun when you live in the moment",
+        # LinkedIn
+        "relationships matter",
+        # Pinterest
+        "the home of inspiration",
+        # Reddit
+        "the front page of the internet",
+        # ESPN
+        "the worldwide leader in sports",
+        # Sports Center
+        "this is sportscenter",
+    }
+
+    # Common misspellings and variations of blocked slogans
+    SLOGAN_PATTERNS = [
+        (r"just\s*do\s*it", "Just Do It (Nike)"),
+        (r"i.?m\s*lovin.?\s*it", "I'm Lovin' It (McDonald's)"),
+        (r"think\s*different", "Think Different (Apple)"),
+        (r"got\s*milk", "Got Milk"),
+        (r"breakfast\s*of\s*champions", "Breakfast of Champions (Wheaties)"),
+        (r"the\s*happiest\s*place", "The Happiest Place (Disney)"),
+        (r"whats?\s*in\s*your\s*wallet", "What's In Your Wallet (Capital One)"),
+        (r"finger\s*lickin", "Finger Lickin' Good (KFC)"),
+        (r"taste\s*the\s*rainbow", "Taste the Rainbow (Skittles)"),
+        (r"gives?\s*you\s*wings", "Gives You Wings (Red Bull)"),
+        (r"snap\s*crackle\s*pop", "Snap Crackle Pop (Rice Krispies)"),
+        (r"melts?\s*in\s*your\s*mouth", "Melts In Your Mouth (M&Ms)"),
+        (r"wheres?\s*the\s*beef", "Where's the Beef (Wendy's)"),
+        (r"have\s*it\s*your\s*way", "Have It Your Way (Burger King)"),
+        (r"eat\s*fresh", "Eat Fresh (Subway)"),
+        (r"im?\s*worth\s*it", "Because You're Worth It (L'Oreal)"),
+        (r"maybe\s*shes?\s*born", "Maybe She's Born With It (Maybelline)"),
+        (r"king\s*of\s*beers", "King of Beers (Budweiser)"),
+        (r"ultimate\s*driving\s*machine", "Ultimate Driving Machine (BMW)"),
+        (r"built\s*ford\s*tough", "Built Ford Tough"),
+        (r"impossible\s*is\s*nothing", "Impossible Is Nothing (Adidas)"),
+        (r"the\s*few\s*the\s*proud", "The Few The Proud (Marines)"),
+        (r"be\s*all\s*you\s*can\s*be", "Be All You Can Be (Army)"),
+        (r"protect\s*this\s*house", "Protect This House (Under Armour)"),
+        (r"we\s*have\s*the\s*meats", "We Have The Meats (Arby's)"),
+        (r"save\s*money\s*live\s*better", "Save Money Live Better (Walmart)"),
+        (r"that\s*was\s*easy", "That Was Easy (Staples)"),
+        (r"open\s*happiness", "Open Happiness (Coca-Cola)"),
+        (r"do\s*the\s*dew", "Do The Dew (Mountain Dew)"),
+        (r"obey\s*your\s*thirst", "Obey Your Thirst (Sprite)"),
+        (r"keep\s*walking", "Keep Walking (Johnnie Walker)"),
+        (r"find\s*your\s*beach", "Find Your Beach (Corona)"),
+        (r"live\s*mas", "Live Mas (Taco Bell)"),
+        (r"never\s*stop\s*improving", "Never Stop Improving (Lowe's)"),
+        (r"expect\s*more\s*pay\s*less", "Expect More Pay Less (Target)"),
+    ]
+
     # Contextual triggers that suggest infringement intent
     RISK_TRIGGERS = [
         "parody of", "inspired by", "looks like", "similar to",
@@ -96,6 +343,22 @@ class TrademarkChecker:
             result["is_safe"] = False
             result["risk_score"] = 100.0
             result["matches"].extend(brand_result["matches"])
+            return result
+
+        # Check against blocked slogans (exact match)
+        slogan_result = self._check_blocked_slogans(normalized)
+        if slogan_result["matches"]:
+            result["is_safe"] = False
+            result["risk_score"] = 100.0
+            result["matches"].extend(slogan_result["matches"])
+            return result
+
+        # Check against slogan patterns (regex match for variations)
+        pattern_result = self._check_slogan_patterns(normalized)
+        if pattern_result["matches"]:
+            result["is_safe"] = False
+            result["risk_score"] = 100.0
+            result["matches"].extend(pattern_result["matches"])
             return result
 
         # Check for risk triggers
@@ -156,6 +419,36 @@ class TrademarkChecker:
                             "match_type": "fuzzy",
                             "score": similarity
                         })
+
+        return {"matches": matches}
+
+    def _check_blocked_slogans(self, normalized: str) -> Dict[str, Any]:
+        """Check against blocked slogan list (exact and near-exact matches)."""
+        matches = []
+
+        for slogan in self.BLOCKED_SLOGANS:
+            if slogan in normalized:
+                matches.append({
+                    "term": slogan,
+                    "type": "blocked_slogan",
+                    "match_type": "exact",
+                    "score": 100
+                })
+
+        return {"matches": matches}
+
+    def _check_slogan_patterns(self, normalized: str) -> Dict[str, Any]:
+        """Check against regex patterns for slogan variations."""
+        matches = []
+
+        for pattern, slogan_name in self.SLOGAN_PATTERNS:
+            if re.search(pattern, normalized, re.IGNORECASE):
+                matches.append({
+                    "term": slogan_name,
+                    "type": "blocked_slogan_pattern",
+                    "match_type": "pattern",
+                    "score": 100
+                })
 
         return {"matches": matches}
 
