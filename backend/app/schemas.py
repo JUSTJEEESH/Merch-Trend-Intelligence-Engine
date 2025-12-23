@@ -173,14 +173,46 @@ class SEOGenerateRequest(BaseModel):
     tone: Optional[str] = "neutral"  # neutral, funny, sarcastic, proud
 
 
+class SEOFieldResponse(BaseModel):
+    text: str
+    length: int
+    limit: int
+    compliant: bool
+
+
+class SEODescriptionFieldResponse(BaseModel):
+    text: str
+    length: int
+    limit_min: int
+    limit_max: int
+    compliant: bool
+
+
+class SEOKeywordsFieldResponse(BaseModel):
+    text: str
+    byte_count: int
+    limit: int
+    compliant: bool
+
+
+class SEOValidationResponse(BaseModel):
+    is_compliant: bool
+    issues: List[str] = []
+    checks_passed: int
+    total_checks: int
+
+
 class SEOGenerateResponse(BaseModel):
     phrase: str
-    title: str
-    bullet_1: str
-    bullet_2: str
-    description: str
-    backend_keywords: str
-    is_compliant: bool
+    niche: str
+    style: str
+    title: SEOFieldResponse
+    brand: SEOFieldResponse
+    bullet_1: SEOFieldResponse
+    bullet_2: SEOFieldResponse
+    description: SEODescriptionFieldResponse
+    keywords: SEOKeywordsFieldResponse
+    validation: SEOValidationResponse
     warnings: List[str] = []
 
 

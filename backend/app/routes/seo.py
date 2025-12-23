@@ -1,4 +1,4 @@
-"""SEO generation API routes."""
+"""SEO generation API routes - Amazon TOS compliant."""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
@@ -7,7 +7,9 @@ from ..database import get_db
 from ..models import SEOListing, Phrase
 from ..schemas import (
     SEOListingResponse, SEOListingCreate,
-    SEOGenerateRequest, SEOGenerateResponse
+    SEOGenerateRequest, SEOGenerateResponse,
+    SEOFieldResponse, SEODescriptionFieldResponse,
+    SEOKeywordsFieldResponse, SEOValidationResponse
 )
 from ..services.seo.generator import SEOGenerator
 from ..services.trademark.checker import TrademarkChecker
@@ -22,37 +24,54 @@ async def generate_seo_listing(
     request: SEOGenerateRequest,
     db: Session = Depends(get_db)
 ):
-    """Generate SEO-optimized listing content for a phrase."""
+    """
+    Generate Amazon TOS-compliant listing content.
+
+    Returns structured response with:
+    - Title (60 chars max)
+    - Brand (50 chars max)
+    - Bullet 1 (256 chars max)
+    - Bullet 2 (256 chars max)
+    - Description (75-2000 chars)
+    - Keywords (250 bytes max)
+    """
     # First check if phrase is safe
     safety = trademark_checker.check_phrase(request.phrase, db)
     if not safety["is_safe"]:
+        # Return empty but structured response for unsafe phrases
         return SEOGenerateResponse(
             phrase=request.phrase,
-            title="",
-            bullet_1="",
-            bullet_2="",
-            description="",
-            backend_keywords="",
-            is_compliant=False,
+            niche="general",
+            style=request.tone or "funny",
+            title=SEOFieldResponse(text="", length=0, limit=60, compliant=False),
+            brand=SEOFieldResponse(text="", length=0, limit=50, compliant=False),
+            bullet_1=SEOFieldResponse(text="", length=0, limit=256, compliant=False),
+            bullet_2=SEOFieldResponse(text="", length=0, limit=256, compliant=False),
+            description=SEODescriptionFieldResponse(text="", length=0, limit_min=75, limit_max=2000, compliant=False),
+            keywords=SEOKeywordsFieldResponse(text="", byte_count=0, limit=250, compliant=False),
+            validation=SEOValidationResponse(is_compliant=False, issues=["Phrase failed trademark check"], checks_passed=0, total_checks=7),
             warnings=["Phrase failed trademark check"] + safety.get("warnings", [])
         )
 
-    # Generate SEO content
+    # Generate SEO content (tone maps to style in new generator)
     result = seo_generator.generate(
         phrase=request.phrase,
         niche=request.niche,
-        tone=request.tone
+        style=request.tone or "funny"
     )
 
     return SEOGenerateResponse(
-        phrase=request.phrase,
-        title=result["title"],
-        bullet_1=result["bullet_1"],
-        bullet_2=result["bullet_2"],
-        description=result["description"],
-        backend_keywords=result["backend_keywords"],
-        is_compliant=result["is_compliant"],
-        warnings=result.get("warnings", [])
+        phrase=result["phrase"],
+        niche=result["niche"],
+        style=result["style"],
+        title=SEOFieldResponse(**result["title"]),
+        brand=SEOFieldResponse(**result["brand"]),
+        bullet_1=SEOFieldResponse(**result["bullet_1"]),
+        bullet_2=SEOFieldResponse(**result["bullet_2"]),
+        description=SEODescriptionFieldResponse(**result["description"]),
+        keywords=SEOKeywordsFieldResponse(**result["keywords"]),
+        validation=SEOValidationResponse(**result["validation"]),
+        warnings=result["validation"].get("issues", [])
     )
 
 
@@ -60,7 +79,7 @@ async def generate_seo_listing(
 async def generate_seo_batch(
     phrases: List[str],
     niche: str = None,
-    tone: str = "neutral",
+    tone: str = "funny",
     db: Session = Depends(get_db)
 ):
     """Generate SEO content for multiple phrases."""
@@ -77,14 +96,26 @@ async def generate_seo_batch(
             })
             continue
 
-        # Generate content
+        # Generate content (tone maps to style)
         result = seo_generator.generate(
             phrase=phrase,
             niche=niche,
-            tone=tone
+            style=tone
         )
-        result["phrase"] = phrase
-        results.append(result)
+        # Flatten for batch response (extract text from nested dicts)
+        results.append({
+            "phrase": result["phrase"],
+            "niche": result["niche"],
+            "style": result["style"],
+            "title": result["title"]["text"],
+            "brand": result["brand"]["text"],
+            "bullet_1": result["bullet_1"]["text"],
+            "bullet_2": result["bullet_2"]["text"],
+            "description": result["description"]["text"],
+            "keywords": result["keywords"]["text"],
+            "is_compliant": result["validation"]["is_compliant"],
+            "issues": result["validation"]["issues"],
+        })
 
     return results
 
@@ -186,7 +217,9 @@ async def validate_listing(
 async def get_forbidden_words():
     """Get list of forbidden words in Amazon Merch listings."""
     return {
-        "forbidden": seo_generator.FORBIDDEN_WORDS,
-        "restricted_product_words": seo_generator.PRODUCT_WORDS,
-        "note": "These words should not appear in titles or descriptions"
+        "forbidden": seo_generator.FORBIDDEN_TERMS,
+        "limits": seo_generator.LIMITS,
+        "available_niches": seo_generator.get_available_niches(),
+        "available_styles": seo_generator.get_available_styles(),
+        "note": "These terms are forbidden by Amazon TOS - content must describe the design only"
     }

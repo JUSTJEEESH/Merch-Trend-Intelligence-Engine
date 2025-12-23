@@ -1,4 +1,4 @@
-"""Amazon Merch SEO listing generator - Design-focused, TOS compliant."""
+"""Amazon Merch SEO listing generator - Fully TOS compliant, design-focused only."""
 import re
 import random
 import logging
@@ -8,825 +8,559 @@ logger = logging.getLogger(__name__)
 
 
 class SEOGenerator:
-    """Generate TOS-compliant, design-focused listings for Amazon Merch."""
+    """
+    Generate Amazon Merch listings that are 100% TOS compliant.
 
-    # Words forbidden in Amazon Merch listings
-    FORBIDDEN_WORDS = [
-        # Product type words (NEVER use)
-        "shirt", "t-shirt", "tshirt", "tee", "hoodie", "sweatshirt",
-        "tank top", "tanktop", "long sleeve", "clothing", "apparel",
-        "pullover", "crewneck", "raglan", "jersey", "top", "wear",
+    AMAZON RULES ENFORCED:
+    - NO promotional phrases (gift, perfect for, best seller, etc.)
+    - NO product quality claims (lightweight, soft, comfortable)
+    - NO special effects claims (glitter, metallic, glow)
+    - NO texture claims (leather, wood, marble)
+    - NO suggested use (birthday, Christmas, etc.)
+    - Content must ONLY describe the design itself
+    """
 
-        # Fit/product descriptions (NEVER use)
-        "lightweight", "classic fit", "slim fit", "relaxed fit",
-        "cotton", "polyester", "fabric", "material", "sleeve",
-        "double-needle", "hem", "stitched", "printed", "ink",
+    # Words/phrases FORBIDDEN by Amazon - will cause rejection
+    FORBIDDEN_TERMS = [
+        # Promotional/Marketing (STRICTLY FORBIDDEN)
+        "gift", "present", "perfect for", "great for", "ideal for",
+        "best seller", "bestseller", "top rated", "#1", "number one",
+        "popular", "trending", "hot", "new", "exclusive", "limited edition",
+        "sale", "discount", "deal", "cheap", "affordable", "bargain",
+        "free shipping", "fast shipping", "prime", "amazon",
 
-        # Amazon policy violations
-        "best seller", "bestseller", "#1", "number one", "top rated",
-        "amazon", "prime", "alexa", "kindle", "echo", "aws",
-        "authentic", "genuine", "official", "licensed", "trademarked",
-        "free shipping", "discount", "sale", "cheap", "affordable",
-        "limited edition", "exclusive", "rare", "one of a kind",
+        # Suggested Use/Occasions (FORBIDDEN - unrelated to design)
+        "birthday", "christmas", "holiday", "mother's day", "father's day",
+        "valentine", "anniversary", "graduation", "wedding", "baby shower",
+        "thanksgiving", "easter", "halloween", "new year",
 
-        # Potentially problematic
-        "sexy", "adult", "explicit", "nsfw",
+        # Quality Claims (FORBIDDEN - not about design)
+        "high quality", "premium quality", "best quality", "top quality",
+        "100%", "guaranteed", "authentic", "genuine", "official",
+        "durable", "long lasting", "comfortable", "soft", "lightweight",
+        "breathable", "stretchy", "fitted", "relaxed fit", "slim fit",
+
+        # Product Terms (Amazon adds these automatically)
+        "t-shirt", "tshirt", "shirt", "tee", "hoodie", "sweatshirt",
+        "tank top", "long sleeve", "pullover", "apparel", "clothing",
+        "cotton", "polyester", "fabric", "material",
+
+        # Texture Claims (FORBIDDEN - misleading)
+        "glitter", "sparkle", "metallic", "foil", "gold", "rose gold",
+        "silver", "neon", "glow", "glow in dark", "holographic",
+        "sequin", "leather", "wood", "marble", "diamond", "gem",
+        "fuzzy", "furry", "velvet", "silk", "satin",
+
+        # Other Violations
+        "licensed", "trademarked", "copyright", "patent",
+        "free", "bonus", "extra", "limited time",
     ]
 
-    # Extended niche data with search-focused keywords
-    NICHE_DATA = {
-        # Beverages
+    # Character limits per Amazon's requirements
+    LIMITS = {
+        "title": 60,
+        "brand": 50,
+        "bullet_1": 256,
+        "bullet_2": 256,
+        "description_min": 75,
+        "description_max": 2000,
+        "keywords": 250,  # bytes, not chars
+    }
+
+    # Design-focused descriptors by mood/style
+    DESIGN_STYLES = {
+        "funny": ["humorous", "witty", "clever", "amusing", "comedic"],
+        "sarcastic": ["sardonic", "ironic", "dry humor", "satirical", "tongue-in-cheek"],
+        "motivational": ["inspiring", "uplifting", "encouraging", "empowering"],
+        "cute": ["adorable", "charming", "sweet", "delightful", "endearing"],
+        "vintage": ["retro", "classic", "nostalgic", "old-school", "throwback"],
+        "bold": ["striking", "eye-catching", "standout", "attention-grabbing"],
+        "minimal": ["simple", "clean", "understated", "elegant", "sleek"],
+    }
+
+    # Niche-specific design vocabulary (describes the design, not the product)
+    NICHE_VOCABULARY = {
         "coffee": {
-            "keywords": ["coffee lover", "caffeine addict", "espresso", "latte", "barista life", "coffee obsessed", "morning coffee", "coffee humor"],
-            "search_terms": ["coffee gifts", "caffeine lover", "espresso fan", "coffee addict gift", "barista appreciation"],
-            "audience": ["coffee enthusiasts", "caffeine lovers", "baristas", "morning people"],
+            "design_elements": ["coffee cup graphic", "steam illustration", "coffee bean motif", "espresso imagery", "barista-themed artwork"],
+            "typography": ["bold lettering", "script font", "vintage typography", "hand-drawn text"],
+            "themes": ["caffeine culture", "morning routine", "coffee appreciation", "barista life"],
         },
-        "tea": {
-            "keywords": ["tea lover", "tea time", "herbal tea", "chai", "tea addict", "tea obsessed"],
-            "search_terms": ["tea gifts", "tea lover present", "chai enthusiast", "herbal tea fan"],
-            "audience": ["tea lovers", "chai enthusiasts", "herbal tea fans"],
-        },
-        "beer": {
-            "keywords": ["craft beer", "beer lover", "hops", "IPA fan", "brewery", "beer snob", "beer enthusiast"],
-            "search_terms": ["beer gifts", "craft beer lover", "IPA enthusiast", "brewery fan"],
-            "audience": ["beer lovers", "craft beer enthusiasts", "IPA fans", "brewery visitors"],
-        },
-        "wine": {
-            "keywords": ["wine lover", "vino", "wine mom", "wine dad", "sommelier", "wine enthusiast", "wine time"],
-            "search_terms": ["wine gifts", "wine lover present", "vino enthusiast", "wine mom gift"],
-            "audience": ["wine lovers", "wine enthusiasts", "sommeliers"],
-        },
-        "whiskey": {
-            "keywords": ["whiskey lover", "bourbon fan", "scotch", "whiskey enthusiast", "on the rocks"],
-            "search_terms": ["whiskey gifts", "bourbon lover", "scotch enthusiast"],
-            "audience": ["whiskey lovers", "bourbon fans", "scotch enthusiasts"],
-        },
-
-        # Fitness & Sports
-        "fitness": {
-            "keywords": ["gym life", "workout", "gains", "lifting", "fitness motivation", "gym rat", "beast mode"],
-            "search_terms": ["fitness gifts", "gym lover", "workout motivation", "lifting enthusiast"],
-            "audience": ["gym enthusiasts", "fitness lovers", "bodybuilders", "personal trainers"],
-        },
-        "yoga": {
-            "keywords": ["yoga lover", "namaste", "yoga life", "zen", "meditation", "yoga instructor", "yogi"],
-            "search_terms": ["yoga gifts", "yogi present", "meditation lover", "zen enthusiast"],
-            "audience": ["yoga practitioners", "meditation lovers", "yoga instructors"],
-        },
-        "running": {
-            "keywords": ["runner", "marathon", "jogging", "run life", "trail running", "5K", "runner's high"],
-            "search_terms": ["runner gifts", "marathon present", "jogging enthusiast", "trail runner"],
-            "audience": ["runners", "marathon runners", "joggers", "trail runners"],
-        },
-        "crossfit": {
-            "keywords": ["crossfit", "WOD", "box life", "crossfit athlete", "functional fitness"],
-            "search_terms": ["crossfit gifts", "WOD lover", "crossfit enthusiast"],
-            "audience": ["crossfit athletes", "functional fitness fans"],
-        },
-        "cycling": {
-            "keywords": ["cyclist", "bike life", "cycling", "road bike", "mountain bike", "spin class"],
-            "search_terms": ["cyclist gifts", "biking enthusiast", "cycling lover"],
-            "audience": ["cyclists", "bikers", "spin enthusiasts"],
-        },
-        "swimming": {
-            "keywords": ["swimmer", "pool life", "swim team", "water lover", "lap swimmer"],
-            "search_terms": ["swimmer gifts", "swimming enthusiast", "pool lover"],
-            "audience": ["swimmers", "water sports enthusiasts"],
-        },
-        "golf": {
-            "keywords": ["golfer", "golf life", "on the green", "golf addict", "tee time", "golf humor"],
-            "search_terms": ["golfer gifts", "golf enthusiast", "golf lover present"],
-            "audience": ["golfers", "golf enthusiasts", "weekend golfers"],
-        },
-        "tennis": {
-            "keywords": ["tennis player", "tennis life", "love-love", "tennis enthusiast"],
-            "search_terms": ["tennis gifts", "tennis lover", "tennis player present"],
-            "audience": ["tennis players", "tennis enthusiasts"],
-        },
-        "basketball": {
-            "keywords": ["basketball", "hoops", "baller", "court life", "basketball player"],
-            "search_terms": ["basketball gifts", "hoops lover", "baller present"],
-            "audience": ["basketball players", "hoops enthusiasts"],
-        },
-        "football": {
-            "keywords": ["football", "gridiron", "touchdown", "football fan", "game day"],
-            "search_terms": ["football gifts", "gridiron fan", "football enthusiast"],
-            "audience": ["football fans", "game day enthusiasts"],
-        },
-        "soccer": {
-            "keywords": ["soccer", "futbol", "soccer player", "pitch life", "soccer mom", "soccer dad"],
-            "search_terms": ["soccer gifts", "futbol lover", "soccer parent"],
-            "audience": ["soccer players", "soccer parents", "futbol fans"],
-        },
-        "baseball": {
-            "keywords": ["baseball", "softball", "diamond life", "baseball player", "home run"],
-            "search_terms": ["baseball gifts", "softball lover", "baseball fan"],
-            "audience": ["baseball players", "softball players", "baseball fans"],
-        },
-        "hockey": {
-            "keywords": ["hockey", "ice hockey", "hockey player", "puck life", "hockey mom", "hockey dad"],
-            "search_terms": ["hockey gifts", "hockey enthusiast", "hockey parent"],
-            "audience": ["hockey players", "hockey parents", "ice hockey fans"],
-        },
-        "volleyball": {
-            "keywords": ["volleyball", "volleyball player", "beach volleyball", "spike life"],
-            "search_terms": ["volleyball gifts", "volleyball lover", "beach volleyball fan"],
-            "audience": ["volleyball players", "beach volleyball enthusiasts"],
-        },
-        "wrestling": {
-            "keywords": ["wrestling", "wrestler", "mat life", "wrestling coach", "wrestling mom"],
-            "search_terms": ["wrestling gifts", "wrestler present", "wrestling parent"],
-            "audience": ["wrestlers", "wrestling coaches", "wrestling parents"],
-        },
-        "mma": {
-            "keywords": ["MMA", "mixed martial arts", "UFC fan", "fighter", "jiu jitsu", "muay thai"],
-            "search_terms": ["MMA gifts", "UFC fan present", "martial arts lover"],
-            "audience": ["MMA fans", "martial artists", "UFC enthusiasts"],
-        },
-        "boxing": {
-            "keywords": ["boxing", "boxer", "fight life", "boxing gym", "knockout"],
-            "search_terms": ["boxing gifts", "boxer present", "fight fan"],
-            "audience": ["boxers", "boxing fans", "fight enthusiasts"],
-        },
-
-        # Outdoor Activities
-        "fishing": {
-            "keywords": ["fishing", "angler", "bass fishing", "fly fishing", "fisherman", "reel life", "gone fishing"],
-            "search_terms": ["fishing gifts", "angler present", "fisherman gift", "bass fishing lover"],
-            "audience": ["anglers", "fishermen", "bass fishers", "fly fishing enthusiasts"],
-        },
-        "hunting": {
-            "keywords": ["hunting", "hunter", "deer hunting", "duck hunting", "bow hunter", "hunt life"],
-            "search_terms": ["hunting gifts", "hunter present", "deer hunter gift", "bow hunting lover"],
-            "audience": ["hunters", "deer hunters", "duck hunters", "bow hunters"],
-        },
-        "camping": {
-            "keywords": ["camping", "camper", "camp life", "tent life", "happy camper", "campfire", "glamping"],
-            "search_terms": ["camping gifts", "camper present", "outdoor lover gift"],
-            "audience": ["campers", "outdoor enthusiasts", "glamping lovers"],
-        },
-        "hiking": {
-            "keywords": ["hiking", "hiker", "trail life", "mountain lover", "nature", "take a hike", "trail blazer"],
-            "search_terms": ["hiking gifts", "hiker present", "trail lover gift", "mountain enthusiast"],
-            "audience": ["hikers", "trail enthusiasts", "mountain lovers"],
-        },
-        "climbing": {
-            "keywords": ["rock climbing", "climber", "bouldering", "mountain climbing", "climb life"],
-            "search_terms": ["climbing gifts", "rock climber present", "bouldering enthusiast"],
-            "audience": ["rock climbers", "boulderers", "mountain climbers"],
-        },
-        "kayaking": {
-            "keywords": ["kayaking", "kayaker", "paddle life", "kayak lover", "water sports"],
-            "search_terms": ["kayaking gifts", "kayaker present", "paddle enthusiast"],
-            "audience": ["kayakers", "paddle sports enthusiasts"],
-        },
-        "surfing": {
-            "keywords": ["surfing", "surfer", "surf life", "wave rider", "beach life", "surf vibes"],
-            "search_terms": ["surfing gifts", "surfer present", "wave lover gift"],
-            "audience": ["surfers", "wave riders", "beach enthusiasts"],
-        },
-        "skiing": {
-            "keywords": ["skiing", "skier", "ski life", "powder", "slopes", "ski bum", "après ski"],
-            "search_terms": ["skiing gifts", "skier present", "powder lover gift"],
-            "audience": ["skiers", "powder enthusiasts", "ski bums"],
-        },
-        "snowboarding": {
-            "keywords": ["snowboarding", "snowboarder", "shred life", "powder", "board life"],
-            "search_terms": ["snowboarding gifts", "snowboarder present", "shred enthusiast"],
-            "audience": ["snowboarders", "shred enthusiasts"],
-        },
-        "sailing": {
-            "keywords": ["sailing", "sailor", "boat life", "yacht", "nautical", "anchors away"],
-            "search_terms": ["sailing gifts", "sailor present", "nautical lover gift"],
-            "audience": ["sailors", "boat enthusiasts", "nautical lovers"],
-        },
-        "boating": {
-            "keywords": ["boating", "boat life", "captain", "lake life", "river life", "pontoon"],
-            "search_terms": ["boating gifts", "boat lover present", "captain gift"],
-            "audience": ["boaters", "lake lovers", "boat captains"],
-        },
-        "rv": {
-            "keywords": ["RV life", "RV living", "camper life", "road trip", "full-time RV", "nomad life"],
-            "search_terms": ["RV gifts", "RV enthusiast present", "road trip lover"],
-            "audience": ["RV enthusiasts", "full-time RVers", "road trippers"],
-        },
-        "atv": {
-            "keywords": ["ATV", "four wheeler", "off-road", "mud life", "trail riding", "side by side"],
-            "search_terms": ["ATV gifts", "off-road enthusiast", "mud lover"],
-            "audience": ["ATV riders", "off-road enthusiasts", "mud lovers"],
-        },
-        "motorcycle": {
-            "keywords": ["motorcycle", "biker", "ride life", "two wheels", "motorcycle life", "open road"],
-            "search_terms": ["motorcycle gifts", "biker present", "rider gift"],
-            "audience": ["bikers", "motorcycle enthusiasts", "riders"],
-        },
-
-        # Pets
         "dogs": {
-            "keywords": ["dog lover", "dog mom", "dog dad", "fur baby", "puppy love", "dog life", "rescue dog"],
-            "search_terms": ["dog lover gifts", "dog mom present", "dog dad gift", "puppy enthusiast"],
-            "audience": ["dog lovers", "dog moms", "dog dads", "pet parents"],
+            "design_elements": ["paw print graphic", "dog silhouette", "bone motif", "puppy illustration", "canine artwork"],
+            "typography": ["playful font", "bold text", "fun lettering"],
+            "themes": ["pet ownership", "dog walking", "puppy love", "canine companionship"],
         },
         "cats": {
-            "keywords": ["cat lover", "cat mom", "cat dad", "crazy cat lady", "kitten", "cat life", "meow"],
-            "search_terms": ["cat lover gifts", "cat mom present", "cat dad gift", "kitten enthusiast"],
-            "audience": ["cat lovers", "cat moms", "cat dads", "feline enthusiasts"],
+            "design_elements": ["cat silhouette", "paw print motif", "whisker illustration", "feline graphic"],
+            "typography": ["whimsical font", "elegant script", "playful text"],
+            "themes": ["cat ownership", "feline behavior", "cat appreciation"],
         },
-        "horses": {
-            "keywords": ["horse lover", "equestrian", "horse mom", "barn life", "horse girl", "riding"],
-            "search_terms": ["horse gifts", "equestrian present", "horse mom gift"],
-            "audience": ["horse lovers", "equestrians", "barn enthusiasts"],
+        "fitness": {
+            "design_elements": ["dumbbell graphic", "muscle illustration", "gym equipment motif"],
+            "typography": ["bold athletic font", "strong lettering", "impact text"],
+            "themes": ["workout culture", "gym lifestyle", "fitness dedication"],
         },
-        "chickens": {
-            "keywords": ["chicken lover", "chicken mom", "backyard chickens", "crazy chicken lady", "farm life"],
-            "search_terms": ["chicken gifts", "chicken mom present", "backyard farmer"],
-            "audience": ["chicken keepers", "backyard farmers", "poultry enthusiasts"],
-        },
-        "goats": {
-            "keywords": ["goat lover", "goat mom", "crazy goat lady", "farm life", "goat life"],
-            "search_terms": ["goat gifts", "goat mom present", "farm animal lover"],
-            "audience": ["goat keepers", "goat lovers", "farm enthusiasts"],
-        },
-        "reptiles": {
-            "keywords": ["reptile lover", "snake owner", "lizard lover", "reptile mom", "cold blooded"],
-            "search_terms": ["reptile gifts", "snake lover present", "lizard enthusiast"],
-            "audience": ["reptile owners", "snake enthusiasts", "lizard lovers"],
-        },
-        "birds": {
-            "keywords": ["bird lover", "parrot owner", "bird mom", "bird dad", "bird watching", "birder"],
-            "search_terms": ["bird gifts", "parrot lover present", "bird watcher gift"],
-            "audience": ["bird lovers", "parrot owners", "bird watchers"],
-        },
-        "fish": {
-            "keywords": ["aquarium lover", "fish keeper", "reef tank", "tropical fish", "aquarist"],
-            "search_terms": ["aquarium gifts", "fish keeper present", "reef tank enthusiast"],
-            "audience": ["aquarists", "fish keepers", "reef enthusiasts"],
-        },
-
-        # Professions
         "nursing": {
-            "keywords": ["nurse life", "RN", "nursing", "night shift", "scrub life", "nurse hero", "healthcare"],
-            "search_terms": ["nurse gifts", "RN present", "nursing school", "healthcare worker gift"],
-            "audience": ["nurses", "RNs", "nursing students", "healthcare workers"],
-        },
-        "doctor": {
-            "keywords": ["doctor", "MD", "physician", "medical", "doctor life", "future doctor"],
-            "search_terms": ["doctor gifts", "physician present", "medical school gift"],
-            "audience": ["doctors", "physicians", "medical students"],
-        },
-        "emt": {
-            "keywords": ["EMT", "paramedic", "first responder", "ambulance", "EMS life"],
-            "search_terms": ["EMT gifts", "paramedic present", "first responder gift"],
-            "audience": ["EMTs", "paramedics", "first responders"],
-        },
-        "firefighter": {
-            "keywords": ["firefighter", "fire department", "fireman", "fire life", "thin red line"],
-            "search_terms": ["firefighter gifts", "fireman present", "fire department gift"],
-            "audience": ["firefighters", "fire department members"],
-        },
-        "police": {
-            "keywords": ["police", "cop", "law enforcement", "thin blue line", "police life", "LEO"],
-            "search_terms": ["police gifts", "law enforcement present", "cop gift"],
-            "audience": ["police officers", "law enforcement", "LEOs"],
-        },
-        "military": {
-            "keywords": ["military", "veteran", "army", "navy", "marines", "air force", "served"],
-            "search_terms": ["military gifts", "veteran present", "armed forces gift"],
-            "audience": ["military members", "veterans", "service members"],
+            "design_elements": ["medical symbol", "heart monitor graphic", "stethoscope illustration"],
+            "typography": ["professional font", "clean text", "modern lettering"],
+            "themes": ["healthcare profession", "nursing dedication", "medical field"],
         },
         "teaching": {
-            "keywords": ["teacher life", "educator", "teaching", "classroom", "teacher appreciation", "best teacher"],
-            "search_terms": ["teacher gifts", "educator present", "classroom gift", "teaching appreciation"],
-            "audience": ["teachers", "educators", "professors", "teaching assistants"],
-        },
-        "principal": {
-            "keywords": ["principal", "school administrator", "school leader", "principal life"],
-            "search_terms": ["principal gifts", "school administrator present"],
-            "audience": ["principals", "school administrators"],
-        },
-        "librarian": {
-            "keywords": ["librarian", "book lover", "library life", "reading", "librarian life"],
-            "search_terms": ["librarian gifts", "library lover present"],
-            "audience": ["librarians", "library workers"],
-        },
-        "mechanic": {
-            "keywords": ["mechanic", "auto mechanic", "car guy", "grease monkey", "garage life", "wrench life"],
-            "search_terms": ["mechanic gifts", "auto mechanic present", "car enthusiast gift"],
-            "audience": ["mechanics", "auto workers", "car enthusiasts"],
-        },
-        "electrician": {
-            "keywords": ["electrician", "sparky", "electrical", "electrician life", "watts up"],
-            "search_terms": ["electrician gifts", "sparky present", "electrical worker gift"],
-            "audience": ["electricians", "electrical workers"],
-        },
-        "plumber": {
-            "keywords": ["plumber", "plumbing", "pipe fitter", "plumber life"],
-            "search_terms": ["plumber gifts", "plumbing present"],
-            "audience": ["plumbers", "pipe fitters"],
-        },
-        "carpenter": {
-            "keywords": ["carpenter", "woodworker", "wood life", "saw dust", "carpenter life"],
-            "search_terms": ["carpenter gifts", "woodworker present"],
-            "audience": ["carpenters", "woodworkers"],
-        },
-        "welder": {
-            "keywords": ["welder", "welding", "welder life", "sparks fly", "fabricator"],
-            "search_terms": ["welder gifts", "welding present", "fabricator gift"],
-            "audience": ["welders", "fabricators"],
-        },
-        "trucker": {
-            "keywords": ["trucker", "truck driver", "big rig", "18 wheeler", "trucker life", "road warrior"],
-            "search_terms": ["trucker gifts", "truck driver present", "big rig gift"],
-            "audience": ["truckers", "truck drivers", "CDL holders"],
-        },
-        "pilot": {
-            "keywords": ["pilot", "aviator", "flying", "pilot life", "aviation", "airplane"],
-            "search_terms": ["pilot gifts", "aviator present", "aviation enthusiast"],
-            "audience": ["pilots", "aviators", "aviation enthusiasts"],
-        },
-        "chef": {
-            "keywords": ["chef", "cook", "culinary", "chef life", "kitchen life", "foodie"],
-            "search_terms": ["chef gifts", "cook present", "culinary enthusiast"],
-            "audience": ["chefs", "cooks", "culinary professionals"],
-        },
-        "bartender": {
-            "keywords": ["bartender", "mixologist", "bar life", "cocktails", "bartender life"],
-            "search_terms": ["bartender gifts", "mixologist present"],
-            "audience": ["bartenders", "mixologists"],
-        },
-        "hairstylist": {
-            "keywords": ["hairstylist", "hair dresser", "salon life", "beautician", "stylist life"],
-            "search_terms": ["hairstylist gifts", "salon worker present"],
-            "audience": ["hairstylists", "beauticians", "salon workers"],
-        },
-        "realtor": {
-            "keywords": ["realtor", "real estate", "real estate agent", "realtor life", "home sales"],
-            "search_terms": ["realtor gifts", "real estate agent present"],
-            "audience": ["realtors", "real estate agents"],
-        },
-        "accountant": {
-            "keywords": ["accountant", "CPA", "accounting", "tax season", "number cruncher"],
-            "search_terms": ["accountant gifts", "CPA present", "tax season gift"],
-            "audience": ["accountants", "CPAs", "bookkeepers"],
-        },
-        "lawyer": {
-            "keywords": ["lawyer", "attorney", "legal", "law school", "lawyer life", "esquire"],
-            "search_terms": ["lawyer gifts", "attorney present", "law school gift"],
-            "audience": ["lawyers", "attorneys", "law students"],
-        },
-        "engineer": {
-            "keywords": ["engineer", "engineering", "engineer life", "problem solver", "STEM"],
-            "search_terms": ["engineer gifts", "engineering present", "STEM gift"],
-            "audience": ["engineers", "engineering students"],
-        },
-        "programmer": {
-            "keywords": ["programmer", "developer", "coder", "coding", "software", "debug life", "git commit"],
-            "search_terms": ["programmer gifts", "developer present", "coder gift"],
-            "audience": ["programmers", "developers", "software engineers"],
-        },
-        "scientist": {
-            "keywords": ["scientist", "science", "research", "lab life", "STEM", "scientist life"],
-            "search_terms": ["scientist gifts", "science lover present", "research gift"],
-            "audience": ["scientists", "researchers", "lab workers"],
-        },
-        "pharmacist": {
-            "keywords": ["pharmacist", "pharmacy", "pharmacist life", "pill counter", "healthcare"],
-            "search_terms": ["pharmacist gifts", "pharmacy present"],
-            "audience": ["pharmacists", "pharmacy techs"],
-        },
-        "dentist": {
-            "keywords": ["dentist", "dental", "dentist life", "tooth fairy", "dental hygienist"],
-            "search_terms": ["dentist gifts", "dental worker present"],
-            "audience": ["dentists", "dental hygienists"],
-        },
-        "veterinarian": {
-            "keywords": ["veterinarian", "vet", "vet life", "animal doctor", "vet tech"],
-            "search_terms": ["veterinarian gifts", "vet present", "vet tech gift"],
-            "audience": ["veterinarians", "vet techs", "animal care workers"],
-        },
-        "dispatcher": {
-            "keywords": ["dispatcher", "911 dispatcher", "dispatch life", "thin gold line", "first responder"],
-            "search_terms": ["dispatcher gifts", "911 operator present"],
-            "audience": ["dispatchers", "911 operators"],
-        },
-        "correctional": {
-            "keywords": ["correctional officer", "CO", "prison guard", "corrections", "thin silver line"],
-            "search_terms": ["correctional officer gifts", "CO present"],
-            "audience": ["correctional officers", "prison staff"],
-        },
-        "farmer": {
-            "keywords": ["farmer", "farm life", "farming", "agriculture", "rancher", "tractor life"],
-            "search_terms": ["farmer gifts", "farm life present", "agriculture gift"],
-            "audience": ["farmers", "ranchers", "agricultural workers"],
-        },
-
-        # Family & Parenting
-        "parenting": {
-            "keywords": ["parent life", "mom life", "dad life", "parenting", "tired parent", "raising kids"],
-            "search_terms": ["parenting gifts", "parent present", "mom dad gift"],
-            "audience": ["parents", "moms", "dads"],
+            "design_elements": ["apple graphic", "book illustration", "classroom motif", "pencil imagery"],
+            "typography": ["chalk-style font", "educational text", "friendly lettering"],
+            "themes": ["education profession", "classroom life", "teaching dedication"],
         },
         "mom": {
-            "keywords": ["mom life", "mama", "mother", "mommy", "mom mode", "super mom", "tired mom"],
-            "search_terms": ["mom gifts", "mother present", "mama gift"],
-            "audience": ["moms", "mothers", "new moms"],
+            "design_elements": ["heart graphic", "family illustration", "decorative text"],
+            "typography": ["script font", "elegant lettering", "warm text style"],
+            "themes": ["motherhood", "parenting life", "family dynamics"],
         },
         "dad": {
-            "keywords": ["dad life", "papa", "father", "daddy", "dad jokes", "super dad", "best dad"],
-            "search_terms": ["dad gifts", "father present", "papa gift"],
-            "audience": ["dads", "fathers", "new dads"],
+            "design_elements": ["tool graphic", "masculine illustration", "bold imagery"],
+            "typography": ["strong font", "bold lettering", "classic text"],
+            "themes": ["fatherhood", "dad humor", "parenting life"],
         },
-        "grandparent": {
-            "keywords": ["grandma", "grandpa", "nana", "papa", "grandparent life", "best grandma", "best grandpa"],
-            "search_terms": ["grandparent gifts", "grandma present", "grandpa gift"],
-            "audience": ["grandparents", "grandmas", "grandpas"],
-        },
-        "aunt": {
-            "keywords": ["aunt", "auntie", "aunt life", "best aunt", "cool aunt", "aunt vibes"],
-            "search_terms": ["aunt gifts", "auntie present", "aunt appreciation"],
-            "audience": ["aunts", "aunties"],
-        },
-        "uncle": {
-            "keywords": ["uncle", "funcle", "uncle life", "best uncle", "cool uncle"],
-            "search_terms": ["uncle gifts", "funcle present"],
-            "audience": ["uncles"],
-        },
-        "twins": {
-            "keywords": ["twin", "twins", "twin life", "twin mom", "twin dad", "double trouble"],
-            "search_terms": ["twin gifts", "twin parent present"],
-            "audience": ["twin parents", "twins"],
-        },
-
-        # Hobbies
         "gaming": {
-            "keywords": ["gamer", "gaming life", "video games", "player one", "level up", "respawn", "game on"],
-            "search_terms": ["gamer gifts", "gaming present", "video game lover gift"],
-            "audience": ["gamers", "video game enthusiasts", "streamers"],
+            "design_elements": ["controller graphic", "pixel art style", "game-inspired imagery"],
+            "typography": ["digital font", "pixel text", "arcade lettering"],
+            "themes": ["gamer culture", "video game lifestyle", "gaming humor"],
         },
-        "reading": {
-            "keywords": ["book lover", "bookworm", "reading", "bibliophile", "book nerd", "one more chapter"],
-            "search_terms": ["book lover gifts", "reading present", "bibliophile gift"],
-            "audience": ["book lovers", "readers", "bibliophiles"],
+        "fishing": {
+            "design_elements": ["fish graphic", "hook illustration", "rod motif", "water imagery"],
+            "typography": ["outdoor font", "rustic text", "natural lettering"],
+            "themes": ["angler lifestyle", "fishing culture", "outdoor activity"],
         },
-        "writing": {
-            "keywords": ["writer", "author", "writing life", "novelist", "storyteller", "writer life"],
-            "search_terms": ["writer gifts", "author present", "writing enthusiast"],
-            "audience": ["writers", "authors", "aspiring writers"],
+        "hunting": {
+            "design_elements": ["deer silhouette", "antler graphic", "outdoor motif"],
+            "typography": ["rugged font", "wilderness text", "bold lettering"],
+            "themes": ["hunter lifestyle", "outdoor tradition", "wildlife appreciation"],
         },
-        "photography": {
-            "keywords": ["photographer", "photography", "camera life", "shutterbug", "photo life"],
-            "search_terms": ["photographer gifts", "camera lover present"],
-            "audience": ["photographers", "camera enthusiasts"],
+        "beer": {
+            "design_elements": ["hop graphic", "mug illustration", "brewery motif"],
+            "typography": ["vintage font", "pub-style text", "bold lettering"],
+            "themes": ["craft beer culture", "brewing appreciation", "beer enthusiasm"],
         },
-        "gardening": {
-            "keywords": ["gardener", "gardening", "plant life", "green thumb", "garden life", "plant lover"],
-            "search_terms": ["gardener gifts", "plant lover present", "garden enthusiast"],
-            "audience": ["gardeners", "plant lovers", "green thumbs"],
-        },
-        "plants": {
-            "keywords": ["plant mom", "plant dad", "plant parent", "crazy plant lady", "plant obsessed"],
-            "search_terms": ["plant lover gifts", "plant parent present"],
-            "audience": ["plant parents", "plant lovers"],
-        },
-        "cooking": {
-            "keywords": ["home cook", "cooking", "kitchen life", "foodie", "home chef", "grill master"],
-            "search_terms": ["home cook gifts", "cooking enthusiast present"],
-            "audience": ["home cooks", "foodies", "grill masters"],
-        },
-        "baking": {
-            "keywords": ["baker", "baking", "pastry", "cupcakes", "baker life", "baking queen"],
-            "search_terms": ["baker gifts", "baking enthusiast present"],
-            "audience": ["bakers", "pastry enthusiasts"],
-        },
-        "crafting": {
-            "keywords": ["crafter", "crafting", "DIY", "handmade", "craft life", "maker"],
-            "search_terms": ["crafter gifts", "DIY enthusiast present"],
-            "audience": ["crafters", "DIY enthusiasts", "makers"],
-        },
-        "knitting": {
-            "keywords": ["knitter", "knitting", "yarn life", "knitting addict", "yarn lover"],
-            "search_terms": ["knitter gifts", "yarn lover present"],
-            "audience": ["knitters", "yarn enthusiasts"],
-        },
-        "sewing": {
-            "keywords": ["sewer", "sewing", "quilter", "quilting", "fabric lover", "sewing life"],
-            "search_terms": ["sewing gifts", "quilter present"],
-            "audience": ["sewers", "quilters"],
-        },
-        "woodworking": {
-            "keywords": ["woodworker", "woodworking", "sawdust", "wood life", "workshop"],
-            "search_terms": ["woodworker gifts", "woodworking enthusiast"],
-            "audience": ["woodworkers", "workshop enthusiasts"],
-        },
-        "painting": {
-            "keywords": ["artist", "painter", "painting", "art life", "creative", "paint life"],
-            "search_terms": ["artist gifts", "painter present"],
-            "audience": ["artists", "painters"],
-        },
-        "music": {
-            "keywords": ["musician", "music lover", "music life", "band", "jam session", "music is life"],
-            "search_terms": ["musician gifts", "music lover present"],
-            "audience": ["musicians", "music lovers"],
-        },
-        "guitar": {
-            "keywords": ["guitarist", "guitar player", "guitar life", "rock on", "acoustic", "electric"],
-            "search_terms": ["guitarist gifts", "guitar player present"],
-            "audience": ["guitarists", "guitar players"],
-        },
-        "drums": {
-            "keywords": ["drummer", "drums", "drum life", "beat maker", "percussion"],
-            "search_terms": ["drummer gifts", "drum player present"],
-            "audience": ["drummers", "percussionists"],
-        },
-        "piano": {
-            "keywords": ["pianist", "piano", "piano player", "keys", "piano life"],
-            "search_terms": ["pianist gifts", "piano player present"],
-            "audience": ["pianists", "piano players"],
-        },
-        "vinyl": {
-            "keywords": ["vinyl collector", "record collector", "vinyl life", "audiophile", "turntable"],
-            "search_terms": ["vinyl collector gifts", "record lover present"],
-            "audience": ["vinyl collectors", "audiophiles"],
-        },
-        "podcasting": {
-            "keywords": ["podcaster", "podcast", "podcast life", "content creator", "on air"],
-            "search_terms": ["podcaster gifts", "content creator present"],
-            "audience": ["podcasters", "content creators"],
-        },
-        "streaming": {
-            "keywords": ["streamer", "streaming", "twitch", "live streaming", "content creator"],
-            "search_terms": ["streamer gifts", "content creator present"],
-            "audience": ["streamers", "content creators"],
-        },
-        "astronomy": {
-            "keywords": ["astronomer", "stargazer", "space lover", "astronomy", "cosmos", "night sky"],
-            "search_terms": ["astronomer gifts", "stargazer present", "space enthusiast"],
-            "audience": ["astronomers", "stargazers", "space enthusiasts"],
-        },
-        "travel": {
-            "keywords": ["traveler", "wanderlust", "adventure", "explorer", "travel life", "jet setter"],
-            "search_terms": ["traveler gifts", "wanderlust present", "adventure lover"],
-            "audience": ["travelers", "adventurers", "explorers"],
-        },
-        "cars": {
-            "keywords": ["car lover", "car enthusiast", "gearhead", "car life", "auto", "muscle car"],
-            "search_terms": ["car lover gifts", "gearhead present", "auto enthusiast"],
-            "audience": ["car enthusiasts", "gearheads", "auto lovers"],
-        },
-        "trucks": {
-            "keywords": ["truck lover", "truck life", "pickup", "diesel", "truck guy"],
-            "search_terms": ["truck lover gifts", "pickup enthusiast"],
-            "audience": ["truck lovers", "diesel enthusiasts"],
-        },
-        "jeep": {
-            "keywords": ["jeep lover", "jeep life", "jeep girl", "jeep guy", "off road", "mudding"],
-            "search_terms": ["jeep lover gifts", "jeep enthusiast"],
-            "audience": ["jeep lovers", "off-road enthusiasts"],
-        },
-        "rc": {
-            "keywords": ["RC", "remote control", "RC car", "RC plane", "RC enthusiast"],
-            "search_terms": ["RC gifts", "remote control enthusiast"],
-            "audience": ["RC hobbyists", "remote control enthusiasts"],
-        },
-        "drone": {
-            "keywords": ["drone pilot", "drone", "aerial", "FPV", "drone life"],
-            "search_terms": ["drone gifts", "drone pilot present"],
-            "audience": ["drone pilots", "aerial photographers"],
-        },
-        "anime": {
-            "keywords": ["anime", "otaku", "manga", "anime lover", "weeb", "anime life"],
-            "search_terms": ["anime gifts", "otaku present", "manga lover"],
-            "audience": ["anime fans", "otakus", "manga lovers"],
-        },
-        "comics": {
-            "keywords": ["comic fan", "comic collector", "geek", "nerd", "superhero"],
-            "search_terms": ["comic gifts", "geek present", "nerd gift"],
-            "audience": ["comic fans", "collectors", "geeks"],
-        },
-        "boardgames": {
-            "keywords": ["board gamer", "tabletop", "board game", "game night", "dice", "D&D"],
-            "search_terms": ["board gamer gifts", "tabletop present"],
-            "audience": ["board gamers", "tabletop enthusiasts"],
-        },
-        "poker": {
-            "keywords": ["poker player", "poker", "card shark", "all in", "casino"],
-            "search_terms": ["poker gifts", "card player present"],
-            "audience": ["poker players", "card enthusiasts"],
-        },
-
-        # Lifestyle
-        "introvert": {
-            "keywords": ["introvert", "homebody", "anti social", "leave me alone", "introvert life"],
-            "search_terms": ["introvert gifts", "homebody present"],
-            "audience": ["introverts", "homebodies"],
-        },
-        "extrovert": {
-            "keywords": ["extrovert", "social butterfly", "people person", "extrovert life"],
-            "search_terms": ["extrovert gifts", "social butterfly present"],
-            "audience": ["extroverts", "social butterflies"],
+        "wine": {
+            "design_elements": ["wine glass graphic", "grape illustration", "vineyard motif"],
+            "typography": ["elegant script", "sophisticated font", "refined text"],
+            "themes": ["wine appreciation", "vineyard culture", "sommelier lifestyle"],
         },
         "anxiety": {
-            "keywords": ["anxiety", "anxious", "mental health", "overthinking", "anxiety warrior"],
-            "search_terms": ["anxiety awareness gifts", "mental health present"],
-            "audience": ["anxiety warriors", "mental health advocates"],
+            "design_elements": ["heart graphic", "brain illustration", "awareness ribbon"],
+            "typography": ["gentle font", "supportive text", "warm lettering"],
+            "themes": ["mental health awareness", "self-care", "emotional wellbeing"],
+        },
+        "introvert": {
+            "design_elements": ["book graphic", "home illustration", "quiet motif"],
+            "typography": ["understated font", "simple text", "minimal lettering"],
+            "themes": ["introvert lifestyle", "solitude appreciation", "quiet personality"],
         },
         "sarcasm": {
-            "keywords": ["sarcasm", "sarcastic", "fluent in sarcasm", "sarcasm is my love language"],
-            "search_terms": ["sarcastic gifts", "sarcasm lover present"],
-            "audience": ["sarcastic people", "humor lovers"],
-        },
-        "true crime": {
-            "keywords": ["true crime", "crime junkie", "murder mystery", "true crime addict"],
-            "search_terms": ["true crime gifts", "crime junkie present"],
-            "audience": ["true crime fans", "crime junkies"],
-        },
-        "astrology": {
-            "keywords": ["astrology", "zodiac", "horoscope", "star sign", "mercury retrograde"],
-            "search_terms": ["astrology gifts", "zodiac present"],
-            "audience": ["astrology enthusiasts", "zodiac lovers"],
-        },
-        "meditation": {
-            "keywords": ["meditation", "mindfulness", "zen", "peaceful", "inner peace", "namaste"],
-            "search_terms": ["meditation gifts", "mindfulness present"],
-            "audience": ["meditation practitioners", "mindfulness enthusiasts"],
-        },
-        "vegan": {
-            "keywords": ["vegan", "plant based", "vegan life", "animal lover", "cruelty free"],
-            "search_terms": ["vegan gifts", "plant based present"],
-            "audience": ["vegans", "plant-based enthusiasts"],
-        },
-        "keto": {
-            "keywords": ["keto", "ketogenic", "low carb", "keto life", "keto diet"],
-            "search_terms": ["keto gifts", "low carb present"],
-            "audience": ["keto dieters", "low carb enthusiasts"],
-        },
-        "vintage": {
-            "keywords": ["vintage", "retro", "old school", "classic", "throwback", "nostalgic"],
-            "search_terms": ["vintage gifts", "retro present"],
-            "audience": ["vintage lovers", "retro enthusiasts"],
-        },
-        "minimalist": {
-            "keywords": ["minimalist", "simple life", "less is more", "minimal"],
-            "search_terms": ["minimalist gifts", "simple life present"],
-            "audience": ["minimalists", "simple living enthusiasts"],
+            "design_elements": ["speech bubble graphic", "bold illustration", "expressive imagery"],
+            "typography": ["impactful font", "statement text", "bold lettering"],
+            "themes": ["dry humor", "witty commentary", "ironic expression"],
         },
     }
 
-    # Generic data for unknown niches
-    GENERIC_DATA = {
-        "keywords": ["funny", "humor", "quote", "saying", "gift idea", "cool", "awesome"],
-        "search_terms": ["funny gifts", "humor present", "quote lover"],
-        "audience": ["gift seekers", "humor lovers"],
+    GENERIC_VOCABULARY = {
+        "design_elements": ["bold graphic", "eye-catching illustration", "decorative motif"],
+        "typography": ["modern font", "clear text", "stylish lettering"],
+        "themes": ["self-expression", "personal style", "unique statement"],
     }
 
     def generate(
         self,
         phrase: str,
         niche: Optional[str] = None,
-        tone: str = "neutral"
+        style: str = "funny"
     ) -> Dict[str, Any]:
-        """Generate TOS-compliant, design-focused listing."""
+        """
+        Generate a fully TOS-compliant Amazon Merch listing.
+
+        Returns:
+            Dict with title, brand, bullet_1, bullet_2, description, keywords
+            All content describes the DESIGN ONLY, no promotional language.
+        """
+        vocab = self._get_vocabulary(niche)
+        style_words = self.DESIGN_STYLES.get(style, self.DESIGN_STYLES["funny"])
+
         result = {
-            "title": "",
-            "bullet_1": "",
-            "bullet_2": "",
-            "description": "",
-            "backend_keywords": "",
-            "is_compliant": True,
-            "warnings": []
+            "phrase": phrase,
+            "niche": niche or "general",
+            "style": style,
+            "title": self._generate_title(phrase, niche),
+            "brand": self._generate_brand(niche),
+            "bullet_1": self._generate_bullet_1(phrase, vocab, style_words),
+            "bullet_2": self._generate_bullet_2(phrase, vocab),
+            "description": self._generate_description(phrase, niche, vocab, style_words),
+            "keywords": self._generate_keywords(phrase, niche, vocab),
+            "validation": {},
         }
 
-        clean_phrase = self._clean_phrase(phrase)
-        niche_data = self._get_niche_data(niche)
-
-        # Generate each field - NO PRODUCT MENTIONS
-        result["title"] = self._generate_title(clean_phrase, niche, niche_data)
-        result["bullet_1"] = self._generate_bullet_1(clean_phrase, niche_data)
-        result["bullet_2"] = self._generate_bullet_2(clean_phrase, niche_data)
-        result["description"] = self._generate_description(clean_phrase, niche, niche_data)
-        result["backend_keywords"] = self._generate_backend_keywords(clean_phrase, niche_data)
-
-        # Validate
-        validation = self.validate_listing(
-            result["title"],
-            result["bullet_1"],
-            result["bullet_2"],
-            result["description"],
-            result["backend_keywords"]
-        )
-        result["is_compliant"] = validation["is_compliant"]
-        result["warnings"] = validation["issues"]
+        # Validate everything
+        result["validation"] = self._validate_all(result)
 
         return result
 
-    def _clean_phrase(self, phrase: str) -> str:
-        """Clean phrase for use in listings."""
-        forbidden = set(self.FORBIDDEN_WORDS)
-        words = phrase.split()
-        clean_words = [w for w in words if w.lower() not in forbidden]
-        return ' '.join(clean_words) if clean_words else phrase
+    def _get_vocabulary(self, niche: Optional[str]) -> Dict:
+        """Get design vocabulary for the niche."""
+        if niche and niche.lower() in self.NICHE_VOCABULARY:
+            return self.NICHE_VOCABULARY[niche.lower()]
+        return self.GENERIC_VOCABULARY
 
-    def _get_niche_data(self, niche: Optional[str]) -> Dict:
-        """Get niche-specific data."""
-        if niche and niche.lower() in self.NICHE_DATA:
-            return self.NICHE_DATA[niche.lower()]
-        return self.GENERIC_DATA
+    def _generate_title(self, phrase: str, niche: Optional[str]) -> Dict[str, Any]:
+        """
+        Generate title (60 chars MAX).
 
-    def _generate_title(self, phrase: str, niche: Optional[str], niche_data: Dict) -> str:
-        """Generate search-optimized title (max 80 chars) - NO PRODUCT WORDS."""
-        phrase_title = phrase.title()
-        niche_display = niche.title() if niche else ""
+        Format: Describes what the design says/shows.
+        NO promotional language, NO product words.
+        """
+        # Clean the phrase
+        clean = self._clean_text(phrase)
 
-        # Try patterns that fit
-        if niche_display:
-            patterns = [
-                f"{phrase_title} Funny {niche_display} Quote Gift Idea",
-                f"{phrase_title} - {niche_display} Lover Gift",
-                f"Funny {niche_display} {phrase_title} Quote",
-                f"{phrase_title} {niche_display} Humor",
-                f"{phrase_title} - Gift For {niche_display} Lovers",
-                f"{phrase_title}",
+        # Build title options - just describe what the design says
+        if niche:
+            niche_clean = niche.title()
+            options = [
+                f"{clean} - {niche_clean} Design",
+                f"{clean} {niche_clean} Typography",
+                f"{niche_clean} Quote - {clean}",
+                f"{clean} - {niche_clean} Saying",
+                f"{clean}",
             ]
         else:
-            patterns = [
-                f"{phrase_title} Funny Quote Gift Idea",
-                f"{phrase_title} Humor Quote",
-                f"Funny {phrase_title} Quote",
-                f"{phrase_title}",
+            options = [
+                f"{clean} - Funny Quote Design",
+                f"{clean} Typography Art",
+                f"{clean} Statement Design",
+                f"{clean}",
             ]
 
-        for pattern in patterns:
-            if len(pattern) <= 80:
-                return pattern
+        # Find first option that fits
+        for option in options:
+            if len(option) <= self.LIMITS["title"]:
+                return {
+                    "text": option,
+                    "length": len(option),
+                    "limit": self.LIMITS["title"],
+                    "compliant": True,
+                }
 
-        return phrase_title[:77] + "..."
+        # Truncate if needed
+        truncated = clean[:self.LIMITS["title"] - 3] + "..."
+        return {
+            "text": truncated,
+            "length": len(truncated),
+            "limit": self.LIMITS["title"],
+            "compliant": True,
+        }
 
-    def _generate_bullet_1(self, phrase: str, niche_data: Dict) -> str:
-        """Generate first bullet - search intent focused, NO PRODUCT INFO."""
-        audience = niche_data["audience"][:3]
-        audience_str = ", ".join(audience)
-        search_terms = niche_data.get("search_terms", niche_data["keywords"])[:2]
+    def _generate_brand(self, niche: Optional[str]) -> Dict[str, Any]:
+        """
+        Generate brand name (50 chars MAX).
 
-        bullet = f"Looking for {search_terms[0]}? This \"{phrase}\" design is perfect for {audience_str}. Makes an ideal gift for birthdays, Christmas, Mother's Day, Father's Day, or any special occasion."
+        Should be a professional-sounding brand.
+        """
+        if niche:
+            niche_title = niche.title().replace(" ", "")
+            brands = [
+                f"{niche_title} Quote Designs",
+                f"{niche_title} Typography Co",
+                f"{niche_title} Statement Art",
+                f"Funny {niche_title} Quotes",
+                f"{niche_title} Apparel Designs",
+            ]
+        else:
+            brands = [
+                "Quote Typography Designs",
+                "Statement Art Co",
+                "Witty Quote Collection",
+                "Bold Statement Designs",
+                "Typography Art Studio",
+            ]
 
-        return bullet[:256] if len(bullet) > 256 else bullet
+        # Pick one that fits
+        for brand in brands:
+            if len(brand) <= self.LIMITS["brand"]:
+                return {
+                    "text": brand,
+                    "length": len(brand),
+                    "limit": self.LIMITS["brand"],
+                    "compliant": True,
+                }
 
-    def _generate_bullet_2(self, phrase: str, niche_data: Dict) -> str:
-        """Generate second bullet - design and audience focused, NO PRODUCT INFO."""
-        keywords = niche_data["keywords"][:3]
+        return {
+            "text": "Quote Designs",
+            "length": 13,
+            "limit": self.LIMITS["brand"],
+            "compliant": True,
+        }
 
-        bullet = f"Show your personality with this unique design. Perfect for anyone who loves {', '.join(keywords)}. A great way to express yourself and start conversations."
+    def _generate_bullet_1(self, phrase: str, vocab: Dict, style_words: List[str]) -> Dict[str, Any]:
+        """
+        Generate first bullet point (256 chars MAX).
 
-        return bullet[:256] if len(bullet) > 256 else bullet
+        Describes WHAT the design shows - the text, style, and visual elements.
+        NO promotional language.
+        """
+        style = random.choice(style_words)
+        element = random.choice(vocab["design_elements"])
+        typo = random.choice(vocab["typography"])
 
-    def _generate_description(self, phrase: str, niche: Optional[str], niche_data: Dict) -> str:
-        """Generate search-focused description - NO PRODUCT INFO."""
-        audience = niche_data["audience"][:3]
-        keywords = niche_data["keywords"][:4]
-        search_terms = niche_data.get("search_terms", keywords)[:3]
+        bullets = [
+            f"This design features the {style} phrase \"{phrase}\" displayed in {typo}. The {element} creates a bold visual statement that expresses personality and attitude.",
+            f"Features the saying \"{phrase}\" in {typo} style. This {style} design uses {element} to create an expressive and memorable look.",
+            f"Displays \"{phrase}\" with {typo} and {element}. This {style} artwork makes a clear statement about personal style and humor.",
+        ]
 
-        niche_name = niche.lower() if niche else "unique designs"
+        # Pick one that fits
+        for bullet in bullets:
+            clean = self._clean_text(bullet)
+            if len(clean) <= self.LIMITS["bullet_1"]:
+                return {
+                    "text": clean,
+                    "length": len(clean),
+                    "limit": self.LIMITS["bullet_1"],
+                    "compliant": True,
+                }
 
-        description = f"""Looking for the perfect gift? The "{phrase}" design captures exactly what {niche_name} enthusiasts love to express!
+        # Fallback
+        fallback = f"This design displays the phrase \"{phrase}\" in a {style} typographic style."
+        return {
+            "text": fallback[:self.LIMITS["bullet_1"]],
+            "length": len(fallback[:self.LIMITS["bullet_1"]]),
+            "limit": self.LIMITS["bullet_1"],
+            "compliant": True,
+        }
 
-This eye-catching design makes a wonderful gift for {', '.join(audience)}. Whether you're searching for {', '.join(search_terms)}, this is the perfect choice.
+    def _generate_bullet_2(self, phrase: str, vocab: Dict) -> Dict[str, Any]:
+        """
+        Generate second bullet point (256 chars MAX).
 
-Ideal for:
-- Birthday gifts
-- Christmas presents
-- Mother's Day or Father's Day
-- Thank you gifts
-- Just because surprises
+        Describes the design theme and who appreciates this type of humor/statement.
+        NO promotional language, NO "perfect for [occasion]".
+        """
+        theme = random.choice(vocab["themes"])
 
-Keywords: {', '.join(keywords[:6])}
+        bullets = [
+            f"The design celebrates {theme} through expressive typography. The bold text and visual composition create an attention-grabbing statement piece.",
+            f"This artwork represents {theme} with its distinctive lettering style. The design composition emphasizes the message while maintaining visual appeal.",
+            f"Celebrates {theme} through creative typography and thoughtful design. The visual elements work together to convey the intended message clearly.",
+        ]
 
-This design is sure to get compliments and start conversations. Show the world your passion for {niche_name} with this unique and memorable design!"""
+        for bullet in bullets:
+            clean = self._clean_text(bullet)
+            if len(clean) <= self.LIMITS["bullet_2"]:
+                return {
+                    "text": clean,
+                    "length": len(clean),
+                    "limit": self.LIMITS["bullet_2"],
+                    "compliant": True,
+                }
 
-        return description[:2000] if len(description) > 2000 else description
+        fallback = f"This design represents {theme} through creative typography and bold visual elements."
+        return {
+            "text": fallback[:self.LIMITS["bullet_2"]],
+            "length": len(fallback[:self.LIMITS["bullet_2"]]),
+            "limit": self.LIMITS["bullet_2"],
+            "compliant": True,
+        }
 
-    def _generate_backend_keywords(self, phrase: str, niche_data: Dict) -> str:
-        """Generate backend search keywords (max 250 chars)."""
-        phrase_words = [w.lower() for w in phrase.split() if len(w) > 2]
-        niche_keywords = niche_data["keywords"][:6]
-        search_terms = niche_data.get("search_terms", [])[:4]
+    def _generate_description(
+        self,
+        phrase: str,
+        niche: Optional[str],
+        vocab: Dict,
+        style_words: List[str]
+    ) -> Dict[str, Any]:
+        """
+        Generate product description (75-2000 chars).
 
-        gift_keywords = ["gift", "present", "birthday", "christmas", "funny", "humor", "quote"]
+        Thoroughly describes the design - the text, typography, visual style,
+        and theme. NO promotional language, NO suggested uses/occasions.
+        """
+        style = random.choice(style_words)
+        element = random.choice(vocab["design_elements"])
+        typo = random.choice(vocab["typography"])
+        theme = random.choice(vocab["themes"])
+        niche_name = niche.title() if niche else "statement"
 
-        all_keywords = []
+        description = f"""This {niche_name} design prominently displays the phrase "{phrase}" as its central element.
+
+Design Details:
+The artwork features {typo} that gives the text a distinctive {style} appearance. The {element} adds visual interest and reinforces the overall theme of the design.
+
+Typography and Style:
+The lettering has been carefully crafted to maximize readability while conveying the intended tone. The text arrangement creates a balanced composition that draws the eye to the message.
+
+Theme:
+This design speaks to {theme}. The visual elements and text work together to express a specific attitude and perspective that resonates with people who appreciate this type of {style} expression.
+
+Visual Composition:
+The design uses contrast and spacing effectively to ensure the message stands out. The overall aesthetic is {style} and attention-grabbing while remaining tasteful and wearable."""
+
+        clean = self._clean_text(description)
+
+        # Ensure within limits
+        if len(clean) < self.LIMITS["description_min"]:
+            # Pad if too short (shouldn't happen with above template)
+            clean += " This design makes a clear visual statement."
+
+        if len(clean) > self.LIMITS["description_max"]:
+            clean = clean[:self.LIMITS["description_max"] - 3] + "..."
+
+        return {
+            "text": clean,
+            "length": len(clean),
+            "limit_min": self.LIMITS["description_min"],
+            "limit_max": self.LIMITS["description_max"],
+            "compliant": self.LIMITS["description_min"] <= len(clean) <= self.LIMITS["description_max"],
+        }
+
+    def _generate_keywords(self, phrase: str, niche: Optional[str], vocab: Dict) -> Dict[str, Any]:
+        """
+        Generate backend search terms (250 bytes MAX).
+
+        Keywords should be search terms customers would use.
+        NO forbidden terms, NO duplicate words.
+        """
+        keywords = []
         seen = set()
-        forbidden = set(w.lower() for w in self.FORBIDDEN_WORDS)
 
-        for kw in phrase_words + niche_keywords + search_terms + gift_keywords:
-            kw_lower = kw.lower()
-            if kw_lower not in seen and kw_lower not in forbidden:
-                seen.add(kw_lower)
-                all_keywords.append(kw_lower)
+        # Add phrase words (cleaned)
+        phrase_words = phrase.lower().split()
+        for word in phrase_words:
+            clean_word = re.sub(r'[^\w]', '', word)
+            if clean_word and len(clean_word) > 2 and clean_word not in seen:
+                if not self._is_forbidden(clean_word):
+                    keywords.append(clean_word)
+                    seen.add(clean_word)
 
-        result = ' '.join(all_keywords)
-        if len(result) > 250:
-            result = result[:250].rsplit(' ', 1)[0]
+        # Add niche-related terms
+        if niche:
+            niche_words = niche.lower().split()
+            for word in niche_words:
+                if word not in seen and not self._is_forbidden(word):
+                    keywords.append(word)
+                    seen.add(word)
 
+        # Add theme keywords (cleaned)
+        for theme in vocab.get("themes", []):
+            for word in theme.lower().split():
+                clean_word = re.sub(r'[^\w]', '', word)
+                if clean_word and len(clean_word) > 2 and clean_word not in seen:
+                    if not self._is_forbidden(clean_word):
+                        keywords.append(clean_word)
+                        seen.add(clean_word)
+
+        # Add safe generic terms
+        safe_terms = ["quote", "saying", "design", "typography", "art", "funny", "humor", "statement"]
+        for term in safe_terms:
+            if term not in seen and not self._is_forbidden(term):
+                keywords.append(term)
+                seen.add(term)
+
+        # Build string within byte limit
+        result = ""
+        for kw in keywords:
+            test = f"{result} {kw}".strip()
+            if len(test.encode('utf-8')) <= self.LIMITS["keywords"]:
+                result = test
+            else:
+                break
+
+        byte_count = len(result.encode('utf-8'))
+        return {
+            "text": result,
+            "byte_count": byte_count,
+            "limit": self.LIMITS["keywords"],
+            "compliant": byte_count <= self.LIMITS["keywords"],
+        }
+
+    def _clean_text(self, text: str) -> str:
+        """Remove any forbidden terms from text."""
+        result = text
+        for term in self.FORBIDDEN_TERMS:
+            # Case insensitive replacement
+            pattern = re.compile(re.escape(term), re.IGNORECASE)
+            result = pattern.sub("", result)
+
+        # Clean up extra spaces
+        result = re.sub(r'\s+', ' ', result).strip()
         return result
+
+    def _is_forbidden(self, word: str) -> bool:
+        """Check if a word is forbidden."""
+        word_lower = word.lower()
+        for term in self.FORBIDDEN_TERMS:
+            if term.lower() == word_lower:
+                return True
+        return False
+
+    def _validate_all(self, result: Dict) -> Dict[str, Any]:
+        """Validate the entire listing."""
+        issues = []
+
+        # Check title
+        if result["title"]["length"] > self.LIMITS["title"]:
+            issues.append(f"Title exceeds {self.LIMITS['title']} character limit")
+
+        # Check brand
+        if result["brand"]["length"] > self.LIMITS["brand"]:
+            issues.append(f"Brand exceeds {self.LIMITS['brand']} character limit")
+
+        # Check bullets
+        if result["bullet_1"]["length"] > self.LIMITS["bullet_1"]:
+            issues.append(f"Bullet 1 exceeds {self.LIMITS['bullet_1']} character limit")
+        if result["bullet_2"]["length"] > self.LIMITS["bullet_2"]:
+            issues.append(f"Bullet 2 exceeds {self.LIMITS['bullet_2']} character limit")
+
+        # Check description
+        desc_len = result["description"]["length"]
+        if desc_len < self.LIMITS["description_min"]:
+            issues.append(f"Description below {self.LIMITS['description_min']} character minimum")
+        if desc_len > self.LIMITS["description_max"]:
+            issues.append(f"Description exceeds {self.LIMITS['description_max']} character limit")
+
+        # Check keywords
+        if result["keywords"]["byte_count"] > self.LIMITS["keywords"]:
+            issues.append(f"Keywords exceed {self.LIMITS['keywords']} byte limit")
+
+        # Check for forbidden terms in all text
+        all_text = " ".join([
+            result["title"]["text"],
+            result["brand"]["text"],
+            result["bullet_1"]["text"],
+            result["bullet_2"]["text"],
+            result["description"]["text"],
+        ]).lower()
+
+        for term in self.FORBIDDEN_TERMS:
+            if term.lower() in all_text:
+                issues.append(f"Contains forbidden term: '{term}'")
+
+        return {
+            "is_compliant": len(issues) == 0,
+            "issues": issues,
+            "checks_passed": 7 - len(issues),
+            "total_checks": 7,
+        }
+
+    def get_forbidden_terms(self) -> List[str]:
+        """Return list of forbidden terms."""
+        return self.FORBIDDEN_TERMS
+
+    def get_limits(self) -> Dict[str, int]:
+        """Return character/byte limits."""
+        return self.LIMITS
+
+    def get_available_niches(self) -> List[str]:
+        """Return list of niches with vocabulary."""
+        return sorted(self.NICHE_VOCABULARY.keys())
+
+    def get_available_styles(self) -> List[str]:
+        """Return list of available design styles."""
+        return list(self.DESIGN_STYLES.keys())
 
     def validate_listing(
         self,
@@ -836,41 +570,59 @@ This design is sure to get compliments and start conversations. Show the world y
         description: str = None,
         backend_keywords: str = None
     ) -> Dict[str, Any]:
-        """Validate listing against Amazon Merch TOS."""
+        """
+        Validate existing listing content against Amazon TOS rules.
+
+        Returns validation result with compliance status and issues.
+        """
         issues = []
 
-        all_content = ' '.join(filter(None, [title, bullet_1, bullet_2, description])).lower()
+        # Check title
+        if title:
+            if len(title) > self.LIMITS["title"]:
+                issues.append(f"Title exceeds {self.LIMITS['title']} character limit ({len(title)} chars)")
+            for term in self.FORBIDDEN_TERMS:
+                if term.lower() in title.lower():
+                    issues.append(f"Title contains forbidden term: '{term}'")
 
-        for word in self.FORBIDDEN_WORDS:
-            if re.search(rf'\b{re.escape(word)}\b', all_content):
-                issues.append(f"Contains forbidden word: '{word}'")
+        # Check bullet 1
+        if bullet_1:
+            if len(bullet_1) > self.LIMITS["bullet_1"]:
+                issues.append(f"Bullet 1 exceeds {self.LIMITS['bullet_1']} character limit ({len(bullet_1)} chars)")
+            for term in self.FORBIDDEN_TERMS:
+                if term.lower() in bullet_1.lower():
+                    issues.append(f"Bullet 1 contains forbidden term: '{term}'")
 
-        if title and len(title) > 80:
-            issues.append(f"Title too long: {len(title)}/80 characters")
+        # Check bullet 2
+        if bullet_2:
+            if len(bullet_2) > self.LIMITS["bullet_2"]:
+                issues.append(f"Bullet 2 exceeds {self.LIMITS['bullet_2']} character limit ({len(bullet_2)} chars)")
+            for term in self.FORBIDDEN_TERMS:
+                if term.lower() in bullet_2.lower():
+                    issues.append(f"Bullet 2 contains forbidden term: '{term}'")
 
-        if bullet_1 and len(bullet_1) > 256:
-            issues.append(f"Bullet 1 too long: {len(bullet_1)}/256 characters")
+        # Check description
+        if description:
+            if len(description) < self.LIMITS["description_min"]:
+                issues.append(f"Description below {self.LIMITS['description_min']} character minimum ({len(description)} chars)")
+            if len(description) > self.LIMITS["description_max"]:
+                issues.append(f"Description exceeds {self.LIMITS['description_max']} character limit ({len(description)} chars)")
+            for term in self.FORBIDDEN_TERMS:
+                if term.lower() in description.lower():
+                    issues.append(f"Description contains forbidden term: '{term}'")
 
-        if bullet_2 and len(bullet_2) > 256:
-            issues.append(f"Bullet 2 too long: {len(bullet_2)}/256 characters")
-
-        if description and len(description) > 2000:
-            issues.append(f"Description too long: {len(description)}/2000 characters")
-
-        if backend_keywords and len(backend_keywords) > 250:
-            issues.append(f"Backend keywords too long: {len(backend_keywords)}/250 characters")
+        # Check keywords
+        if backend_keywords:
+            byte_count = len(backend_keywords.encode('utf-8'))
+            if byte_count > self.LIMITS["keywords"]:
+                issues.append(f"Keywords exceed {self.LIMITS['keywords']} byte limit ({byte_count} bytes)")
 
         return {
             "is_compliant": len(issues) == 0,
-            "issues": issues
+            "issues": issues,
+            "checks_performed": 5,
         }
 
-    def get_forbidden_words(self) -> Dict[str, List[str]]:
-        """Return the forbidden words for reference."""
-        return {
-            "forbidden": self.FORBIDDEN_WORDS,
-        }
 
-    def get_all_niches(self) -> List[str]:
-        """Return all available niches."""
-        return sorted(self.NICHE_DATA.keys())
+# Singleton instance
+seo_generator = SEOGenerator()
