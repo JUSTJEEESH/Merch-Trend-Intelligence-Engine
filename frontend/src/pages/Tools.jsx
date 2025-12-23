@@ -50,7 +50,6 @@ const TABS = [
   { id: 'bsr', name: 'BSR Tracker', icon: BarChart3 },
   { id: 'profitability', name: 'Profitability', icon: DollarSign },
   { id: 'design', name: 'Design Concepts', icon: Palette },
-  { id: 'listing', name: 'Listing Optimizer', icon: FileText },
 ]
 
 export default function Tools() {
@@ -105,7 +104,6 @@ export default function Tools() {
         {activeTab === 'bsr' && <BSRTab />}
         {activeTab === 'profitability' && <ProfitabilityTab />}
         {activeTab === 'design' && <DesignTab />}
-        {activeTab === 'listing' && <ListingTab onCopy={handleCopy} copiedText={copiedText} />}
       </div>
     </div>
   )
@@ -151,8 +149,8 @@ function TrendingTab({ onCopy, copiedText }) {
             <span className="text-xs text-zinc-500">{trends[platform]?.length || 0} trends</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {(trends[platform] || []).slice(0, 6).map((trend, idx) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto">
+            {(trends[platform] || []).map((trend, idx) => (
               <div
                 key={idx}
                 className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50 hover:border-zinc-600 transition-all"

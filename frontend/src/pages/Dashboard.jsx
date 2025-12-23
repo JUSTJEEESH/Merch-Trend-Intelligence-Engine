@@ -227,47 +227,48 @@ const NICHE_CATEGORIES = [
 ]
 
 // Simulated trending data (would come from API in production)
+// Updated December 2024 - Current viral trends
 const TRENDING_NOW = [
-  // Mental Health / Self-Care (HUGE right now)
-  { phrase: "In my healing era", bsr: 1250, trend: "+340%", platform: "Amazon" },
-  { phrase: "Overstimulated moms club", bsr: 890, trend: "+280%", platform: "Amazon" },
-  { phrase: "Anxious but hopeful", bsr: 2100, trend: "+195%", platform: "Etsy" },
-  { phrase: "Professional overthinker", bsr: 1680, trend: "+175%", platform: "Amazon" },
-  { phrase: "Touch grass enthusiast", bsr: 3200, trend: "+160%", platform: "Amazon" },
-  { phrase: "Emotionally unavailable", bsr: 2800, trend: "+145%", platform: "Etsy" },
-  // TikTok Viral Trends
-  { phrase: "Very demure very mindful", bsr: 450, trend: "+890%", platform: "TikTok" },
-  { phrase: "Delulu is the solulu", bsr: 780, trend: "+520%", platform: "TikTok" },
-  { phrase: "Its giving main character", bsr: 1100, trend: "+380%", platform: "TikTok" },
-  { phrase: "No thoughts just vibes", bsr: 920, trend: "+290%", platform: "Amazon" },
-  { phrase: "Roman Empire era", bsr: 1450, trend: "+245%", platform: "TikTok" },
-  { phrase: "Chronically online", bsr: 1890, trend: "+210%", platform: "Amazon" },
-  { phrase: "Unhinged behavior", bsr: 2200, trend: "+185%", platform: "Etsy" },
-  { phrase: "Girl math approved", bsr: 1350, trend: "+320%", platform: "TikTok" },
-  { phrase: "Boy math doesnt add up", bsr: 1680, trend: "+275%", platform: "TikTok" },
-  // Millennial/Gen Z Humor
-  { phrase: "Surviving on spite and coffee", bsr: 1750, trend: "+165%", platform: "Amazon" },
-  { phrase: "Running on iced coffee and anxiety", bsr: 980, trend: "+225%", platform: "Amazon" },
-  { phrase: "Mentally checked out", bsr: 2100, trend: "+155%", platform: "Etsy" },
-  { phrase: "Currently in my flop era", bsr: 1560, trend: "+195%", platform: "TikTok" },
-  { phrase: "Hot girl with cold heart", bsr: 2400, trend: "+140%", platform: "Amazon" },
-  { phrase: "Soft launch relationship", bsr: 1890, trend: "+175%", platform: "TikTok" },
-  { phrase: "Hard launched into chaos", bsr: 2650, trend: "+125%", platform: "Etsy" },
-  // Relatable Life Moments
-  { phrase: "Too tired to function", bsr: 1200, trend: "+180%", platform: "Amazon" },
-  { phrase: "My toxic trait is", bsr: 980, trend: "+265%", platform: "TikTok" },
-  { phrase: "I have no hobbies I just exist", bsr: 1450, trend: "+195%", platform: "Amazon" },
-  { phrase: "This is my last warning", bsr: 2100, trend: "+145%", platform: "Etsy" },
-  { phrase: "Powered by audacity", bsr: 1780, trend: "+155%", platform: "Amazon" },
-  { phrase: "Weaponized incompetence detector", bsr: 1350, trend: "+210%", platform: "TikTok" },
-  { phrase: "Not your neurotypical", bsr: 890, trend: "+285%", platform: "Amazon" },
-  { phrase: "Autistic and iconic", bsr: 1120, trend: "+250%", platform: "Etsy" },
-  // Work/Career Humor
-  { phrase: "Act your wage", bsr: 560, trend: "+420%", platform: "TikTok" },
-  { phrase: "Quiet quitting champion", bsr: 1250, trend: "+195%", platform: "Amazon" },
-  { phrase: "This meeting could be an email", bsr: 1680, trend: "+150%", platform: "Amazon" },
-  { phrase: "Burnt out but showing up", bsr: 1890, trend: "+165%", platform: "Etsy" },
-  { phrase: "Working from bed", bsr: 2450, trend: "+125%", platform: "Amazon" },
+  // December 2024 Viral Trends
+  { phrase: "Moo Deng era", bsr: 320, trend: "+520%", platform: "TikTok" },
+  { phrase: "Hawk Tuah energy", bsr: 450, trend: "+480%", platform: "TikTok" },
+  { phrase: "Brat summer forever", bsr: 680, trend: "+420%", platform: "TikTok" },
+  { phrase: "Demure and mindful", bsr: 520, trend: "+380%", platform: "TikTok" },
+  { phrase: "Aura points negative", bsr: 780, trend: "+340%", platform: "TikTok" },
+  { phrase: "Brain rot certified", bsr: 890, trend: "+320%", platform: "TikTok" },
+  { phrase: "Looksmaxxing era", bsr: 1100, trend: "+290%", platform: "TikTok" },
+  { phrase: "Underconsumption core", bsr: 950, trend: "+275%", platform: "TikTok" },
+  { phrase: "Boysober 2024", bsr: 1250, trend: "+265%", platform: "TikTok" },
+  // Work Trends
+  { phrase: "Act your wage", bsr: 560, trend: "+420%", platform: "Amazon" },
+  { phrase: "Bare minimum Monday", bsr: 780, trend: "+310%", platform: "TikTok" },
+  { phrase: "Lazy girl job", bsr: 920, trend: "+285%", platform: "Amazon" },
+  { phrase: "Quiet quitting champion", bsr: 1100, trend: "+225%", platform: "Amazon" },
+  { phrase: "Meeting survivor", bsr: 1350, trend: "+195%", platform: "Amazon" },
+  // Mental Health / Relatable
+  { phrase: "Chronically online", bsr: 980, trend: "+245%", platform: "Amazon" },
+  { phrase: "Professional overthinker", bsr: 1200, trend: "+215%", platform: "Amazon" },
+  { phrase: "My toxic trait is", bsr: 850, trend: "+265%", platform: "TikTok" },
+  { phrase: "Anxious but making it", bsr: 1450, trend: "+185%", platform: "Amazon" },
+  { phrase: "Overstimulated moms club", bsr: 780, trend: "+235%", platform: "Amazon" },
+  // Slang / Internet Culture
+  { phrase: "Its giving main character", bsr: 1100, trend: "+195%", platform: "TikTok" },
+  { phrase: "Understood the assignment", bsr: 1350, trend: "+175%", platform: "Amazon" },
+  { phrase: "Ate and left no crumbs", bsr: 1580, trend: "+165%", platform: "TikTok" },
+  { phrase: "Rent free in my head", bsr: 1200, trend: "+185%", platform: "Amazon" },
+  { phrase: "Cooked and served", bsr: 1680, trend: "+155%", platform: "TikTok" },
+  // Lifestyle
+  { phrase: "Soft life advocate", bsr: 1450, trend: "+175%", platform: "TikTok" },
+  { phrase: "Feral girl energy", bsr: 1780, trend: "+165%", platform: "TikTok" },
+  { phrase: "Mob wife aesthetic", bsr: 1250, trend: "+195%", platform: "TikTok" },
+  { phrase: "Coquette coded", bsr: 1350, trend: "+185%", platform: "TikTok" },
+  { phrase: "Clean girl loading", bsr: 1890, trend: "+145%", platform: "TikTok" },
+  // Humor
+  { phrase: "Delulu is the solulu", bsr: 920, trend: "+225%", platform: "TikTok" },
+  { phrase: "NPC behavior", bsr: 1100, trend: "+205%", platform: "TikTok" },
+  { phrase: "Slay all day", bsr: 1450, trend: "+165%", platform: "Amazon" },
+  { phrase: "No thoughts head empty", bsr: 1250, trend: "+175%", platform: "Amazon" },
+  { phrase: "Touch grass please", bsr: 1680, trend: "+145%", platform: "Amazon" },
 ]
 
 const STORAGE_KEY = 'merch_engine_ideas'

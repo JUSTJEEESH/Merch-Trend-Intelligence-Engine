@@ -10,62 +10,19 @@ logger = logging.getLogger(__name__)
 class VariationGenerator:
     """Generate creative variations of phrases for merch ideation."""
 
-    # Activity/hobby synonyms and related concepts
-    ACTIVITY_SYNONYMS = {
-        "hiking": ["trails", "mountains", "nature", "outdoors", "trekking", "walking"],
-        "fishing": ["angling", "casting", "the water", "the lake", "reeling"],
-        "gaming": ["playing", "my controller", "the game", "leveling up"],
-        "coding": ["programming", "debugging", "my keyboard", "the terminal"],
-        "reading": ["books", "my kindle", "the library", "getting lost in pages"],
-        "running": ["jogging", "the track", "miles", "my sneakers"],
-        "yoga": ["stretching", "my mat", "breathing", "meditation"],
-        "cooking": ["the kitchen", "my recipes", "baking", "food"],
-        "gardening": ["my plants", "the garden", "growing things", "dirt"],
-        "crafting": ["creating", "making things", "DIY", "my hands"],
-        "camping": ["the outdoors", "nature", "under the stars", "the tent"],
-        "hunting": ["the woods", "the blind", "tracking", "the wild"],
-        "golfing": ["the course", "my clubs", "the green", "18 holes"],
-        "swimming": ["the pool", "the water", "laps", "diving"],
-        "biking": ["cycling", "pedaling", "two wheels", "the trail"],
-        "lifting": ["the gym", "weights", "gains", "the iron"],
-        "knitting": ["yarn", "needles", "stitches", "creating"],
-    }
-
-    # Therapy/self-care pattern alternatives
-    THERAPY_PATTERNS = [
-        "{activity} is my therapy",
-        "{activity} is cheaper than therapy",
-        "I don't need therapy I need {activity}",
-        "My therapist recommends {activity}",
-        "{activity}: cheaper than a therapist",
-        "Therapy is expensive {activity} is free",
-        "{activity} fixes everything",
-        "{activity} is my happy place",
-        "{activity} is my escape",
-        "Less drama more {activity}",
-        "{activity} over everything",
-        "Born to {verb}",
-        "I'd rather be {verb_ing}",
-        "My soul needs {activity}",
-        "{activity} heals the soul",
-    ]
-
-    # Common phrase patterns and their alternatives
+    # Common phrase patterns and their variations
     PHRASE_PATTERNS = {
         r"(.+) is my therapy": [
             "{0} is cheaper than therapy",
             "I don't need therapy I need {0}",
             "My therapist says I need more {0}",
             "{0} is my happy place",
-            "{0} fixes everything therapy can't",
             "{0} heals the soul",
             "Forget therapy give me {0}",
-            "{0} is the only therapy I need",
         ],
         r"I love (.+)": [
             "{0} is my love language",
             "My heart belongs to {0}",
-            "{0} has my whole heart",
             "Obsessed with {0}",
             "Can't live without {0}",
             "{0} is life",
@@ -78,14 +35,12 @@ class VariationGenerator:
             "{0} is not optional",
             "Will work for {0}",
             "{0} please",
-            "Send {0}",
         ],
         r"(.+) mom": [
             "{0} mama",
             "Proud {0} mom",
             "{0} mom life",
             "Best {0} mom ever",
-            "{0} mom mode",
             "Living that {0} mom life",
         ],
         r"(.+) dad": [
@@ -93,19 +48,12 @@ class VariationGenerator:
             "Proud {0} dad",
             "{0} dad life",
             "Best {0} dad ever",
-            "{0} dad mode",
             "Rocking the {0} dad life",
-        ],
-        r"I('m| am) not (.+) I('m| am) (.+)": [
-            "Not {1} just {3}",
-            "{3} not {1}",
-            "Call me {3} not {1}",
         ],
         r"powered by (.+)": [
             "Runs on {0}",
             "Fueled by {0}",
             "{0} is my fuel",
-            "Operating on {0}",
             "{0} powered",
         ],
     }
@@ -114,30 +62,38 @@ class VariationGenerator:
     WORD_SYNONYMS = {
         "love": ["adore", "heart", "live for", "obsessed with"],
         "need": ["require", "must have", "can't live without"],
-        "coffee": ["caffeine", "espresso", "java", "brew", "bean juice"],
+        "coffee": ["caffeine", "espresso", "java", "brew"],
         "wine": ["vino", "grape juice", "the good stuff"],
         "beer": ["brews", "cold ones", "hops"],
-        "tired": ["exhausted", "running on empty", "drained", "sleepy"],
+        "tired": ["exhausted", "running on empty", "drained"],
         "happy": ["joyful", "blessed", "content", "thriving"],
         "crazy": ["wild", "chaotic", "unhinged", "feral"],
-        "mom": ["mama", "mother", "mommy", "madre"],
+        "mom": ["mama", "mother", "mommy"],
         "dad": ["papa", "father", "daddy", "pops"],
-        "dog": ["pup", "pupper", "fur baby", "good boy", "doggo"],
+        "dog": ["pup", "pupper", "fur baby", "doggo"],
         "cat": ["kitty", "feline", "fur baby", "floof"],
-        "best": ["greatest", "top", "ultimate", "finest"],
-        "life": ["existence", "journey", "vibe", "mood"],
-        "therapy": ["medicine", "cure", "healing", "escape", "happy place"],
+        "best": ["greatest", "top", "ultimate"],
+        "life": ["existence", "journey", "vibe"],
     }
 
-    # Creative phrase twists
-    TWIST_TEMPLATES = [
-        "Less {bad_thing} more {good_thing}",
-        "{good_thing} over {bad_thing}",
-        "Choose {good_thing}",
-        "{good_thing} is the answer",
-        "When in doubt {good_thing}",
-        "Will trade {bad_thing} for {good_thing}",
-        "{good_thing} first {bad_thing} never",
+    # Trending phrase templates (2024 style)
+    TRENDING_TEMPLATES = [
+        "In my {phrase} era",
+        "{phrase} era",
+        "{phrase} energy",
+        "{phrase} is a mood",
+        "{phrase} vibes only",
+        "Certified {phrase}",
+        "{phrase} mode activated",
+        "It's giving {phrase}",
+        "{phrase} coded",
+        "Living that {phrase} life",
+        "{phrase} is my personality",
+        "{phrase} but make it fashion",
+        "Main character {phrase}",
+        "{phrase} enthusiast",
+        "Professional {phrase}",
+        "Currently obsessed with {phrase}",
     ]
 
     def __init__(self):
@@ -160,23 +116,24 @@ class VariationGenerator:
     ) -> List[Dict[str, Any]]:
         """Generate creative variations of a phrase."""
         variations = []
+        phrase_clean = phrase.strip()
 
-        # Try pattern-based variations first (usually best)
-        variations.extend(self._generate_pattern_variations(phrase))
+        # Try pattern-based variations first
+        variations.extend(self._generate_pattern_variations(phrase_clean))
 
-        # Add word-swap variations
-        variations.extend(self._generate_word_swap_variations(phrase))
+        # Add trending-style variations using the FULL phrase
+        variations.extend(self._generate_trending_variations(phrase_clean))
 
-        # Add creative twists
-        variations.extend(self._generate_creative_twists(phrase))
+        # Add word-swap variations only if we have known synonyms
+        variations.extend(self._generate_word_swap_variations(phrase_clean))
 
-        # Add alternative structures
-        variations.extend(self._generate_alternative_structures(phrase))
+        # Add structural variations
+        variations.extend(self._generate_structural_variations(phrase_clean))
 
         # Deduplicate and clean
         seen = set()
         unique_variations = []
-        original_lower = phrase.lower().strip()
+        original_lower = phrase_clean.lower()
 
         for var in variations:
             text = var["text"].strip()
@@ -186,8 +143,8 @@ class VariationGenerator:
             if normalized == original_lower or normalized in seen:
                 continue
 
-            # Skip if too similar (just added/removed a word)
-            if self._is_too_similar(normalized, original_lower):
+            # Skip very short results
+            if len(text) < 5:
                 continue
 
             seen.add(normalized)
@@ -207,22 +164,40 @@ class VariationGenerator:
                 groups = match.groups()
                 for template in templates:
                     try:
-                        # Fill in the template with captured groups
                         new_phrase = template
                         for i, group in enumerate(groups):
-                            if group:  # Skip None groups
+                            if group:
                                 new_phrase = new_phrase.replace(f"{{{i}}}", group)
 
-                        if new_phrase != template:  # Make sure substitution happened
+                        if new_phrase != template:
                             variations.append({
                                 "text": new_phrase.capitalize(),
                                 "type": "pattern",
-                                "pattern": pattern
                             })
                     except Exception:
                         continue
 
         return variations
+
+    def _generate_trending_variations(self, phrase: str) -> List[Dict[str, Any]]:
+        """Generate trending-style variations using the FULL phrase."""
+        variations = []
+        phrase_lower = phrase.lower()
+
+        # Use the full phrase in trending templates
+        for template in self.TRENDING_TEMPLATES:
+            try:
+                new_phrase = template.format(phrase=phrase_lower)
+                # Don't duplicate if phrase is already in that format
+                if new_phrase.lower() != phrase_lower:
+                    variations.append({
+                        "text": new_phrase.title(),
+                        "type": "trending",
+                    })
+            except Exception:
+                continue
+
+        return variations[:8]  # Limit trending variations
 
     def _generate_word_swap_variations(self, phrase: str) -> List[Dict[str, Any]]:
         """Generate variations by swapping words with synonyms."""
@@ -232,208 +207,78 @@ class VariationGenerator:
         for i, word in enumerate(words):
             clean_word = re.sub(r'[^\w]', '', word)
 
-            # Check direct synonyms
+            # Only swap if we have a known synonym
             if clean_word in self.WORD_SYNONYMS:
-                for synonym in self.WORD_SYNONYMS[clean_word][:3]:
+                for synonym in self.WORD_SYNONYMS[clean_word][:2]:
                     new_words = words.copy()
                     new_words[i] = synonym
                     new_phrase = ' '.join(new_words)
                     variations.append({
-                        "text": new_phrase.capitalize(),
+                        "text": new_phrase.title(),
                         "type": "synonym",
-                        "swap": f"{clean_word} → {synonym}"
-                    })
-
-            # Check activity synonyms
-            if clean_word in self.ACTIVITY_SYNONYMS:
-                for alt in self.ACTIVITY_SYNONYMS[clean_word][:2]:
-                    new_words = words.copy()
-                    new_words[i] = alt
-                    new_phrase = ' '.join(new_words)
-                    variations.append({
-                        "text": new_phrase.capitalize(),
-                        "type": "activity_swap",
-                        "swap": f"{clean_word} → {alt}"
+                        "swap": f"{clean_word} -> {synonym}"
                     })
 
         return variations
 
-    def _generate_creative_twists(self, phrase: str) -> List[Dict[str, Any]]:
-        """Generate creative alternative phrasings."""
-        variations = []
-        phrase_lower = phrase.lower()
-
-        # Extract the main subject/activity
-        activity = self._extract_activity(phrase_lower)
-        if not activity:
-            return variations
-
-        # Generate "I'd rather be X" style
-        verb_ing = self._to_gerund(activity)
-        if verb_ing:
-            variations.append({
-                "text": f"I'd rather be {verb_ing}",
-                "type": "creative",
-                "style": "preference"
-            })
-
-        # Generate "Born to X" style
-        variations.append({
-            "text": f"Born to {activity}",
-            "type": "creative",
-            "style": "destiny"
-        })
-
-        # Generate comparison style
-        variations.append({
-            "text": f"Less talk more {activity}",
-            "type": "creative",
-            "style": "comparison"
-        })
-
-        variations.append({
-            "text": f"{activity.capitalize()} over everything",
-            "type": "creative",
-            "style": "priority"
-        })
-
-        variations.append({
-            "text": f"Eat sleep {activity} repeat",
-            "type": "creative",
-            "style": "routine"
-        })
-
-        variations.append({
-            "text": f"Will work for {activity}",
-            "type": "creative",
-            "style": "humor"
-        })
-
-        return variations
-
-    def _generate_alternative_structures(self, phrase: str) -> List[Dict[str, Any]]:
+    def _generate_structural_variations(self, phrase: str) -> List[Dict[str, Any]]:
         """Generate structural alternatives."""
         variations = []
         phrase_lower = phrase.lower()
 
-        # If it's an "X is my Y" phrase
+        # "X is my Y" pattern
         match = re.match(r'(.+) is my (.+)', phrase_lower)
         if match:
             subject, object_ = match.groups()
             variations.extend([
-                {"text": f"My {object_} is {subject}", "type": "structure", "style": "inverted"},
-                {"text": f"{subject.capitalize()}: my {object_}", "type": "structure", "style": "colon"},
-                {"text": f"All I need is {subject}", "type": "structure", "style": "simplified"},
-                {"text": f"{subject.capitalize()} = {object_}", "type": "structure", "style": "equation"},
+                {"text": f"My {object_} is {subject}".title(), "type": "structure"},
+                {"text": f"{subject.capitalize()}: my {object_}", "type": "structure"},
+                {"text": f"All I need is {subject}".title(), "type": "structure"},
             ])
 
-        # If it has "I'm" or "I am"
+        # "I'm X" pattern
         match = re.match(r"i'?m (.+)", phrase_lower)
         if match:
             rest = match.group(1)
             variations.extend([
-                {"text": f"Proud to be {rest}", "type": "structure", "style": "proud"},
-                {"text": f"100% {rest}", "type": "structure", "style": "percentage"},
-                {"text": f"Certified {rest}", "type": "structure", "style": "certified"},
+                {"text": f"Proud to be {rest}".title(), "type": "structure"},
+                {"text": f"100% {rest}".title(), "type": "structure"},
+                {"text": f"Certified {rest}".title(), "type": "structure"},
             ])
 
-        return variations
-
-    def _extract_activity(self, phrase: str) -> Optional[str]:
-        """Extract the main activity/subject from a phrase."""
-        # Common patterns to extract activity
-        patterns = [
-            r'(.+?) is my',
-            r'i love (.+)',
-            r'i need (.+)',
-            r"i'd rather be (.+)",
-            r'powered by (.+)',
-            r'fueled by (.+)',
-        ]
-
-        for pattern in patterns:
-            match = re.search(pattern, phrase.lower())
-            if match:
-                return match.group(1).strip()
-
-        # Fall back to first noun-like word
-        words = phrase.lower().split()
-        for word in words:
-            clean = re.sub(r'[^\w]', '', word)
-            if clean in self.ACTIVITY_SYNONYMS or len(clean) > 3:
-                return clean
-
-        return None
-
-    def _to_gerund(self, word: str) -> Optional[str]:
-        """Convert a word to its -ing form."""
-        word = word.lower().strip()
-
-        # Special cases
-        gerunds = {
-            "hike": "hiking", "hiking": "hiking",
-            "fish": "fishing", "fishing": "fishing",
-            "game": "gaming", "gaming": "gaming",
-            "code": "coding", "coding": "coding",
-            "run": "running", "running": "running",
-            "swim": "swimming", "swimming": "swimming",
-            "read": "reading", "reading": "reading",
-            "cook": "cooking", "cooking": "cooking",
-            "camp": "camping", "camping": "camping",
-            "hunt": "hunting", "hunting": "hunting",
-            "golf": "golfing", "golfing": "golfing",
-            "bike": "biking", "biking": "biking",
-            "lift": "lifting", "lifting": "lifting",
-            "craft": "crafting", "crafting": "crafting",
-            "garden": "gardening", "gardening": "gardening",
-            "travel": "traveling", "traveling": "traveling",
-            "climb": "climbing", "climbing": "climbing",
-            "surf": "surfing", "surfing": "surfing",
-            "ski": "skiing", "skiing": "skiing",
-            "skate": "skating", "skating": "skating",
-            "dance": "dancing", "dancing": "dancing",
-            "paint": "painting", "painting": "painting",
-            "write": "writing", "writing": "writing",
-            "shop": "shopping", "shopping": "shopping",
-            "nap": "napping", "napping": "napping",
-            "sleep": "sleeping", "sleeping": "sleeping",
-            "eat": "eating", "eating": "eating",
-            "drink": "drinking", "drinking": "drinking",
-        }
-
-        if word in gerunds:
-            return gerunds[word]
-
-        # Generic rule
-        if word.endswith('e'):
-            return word[:-1] + 'ing'
-        elif word.endswith('ing'):
-            return word
+        # Add negation flip for humor
+        if " not " in phrase_lower:
+            # Already has negation, keep as is
+            pass
+        elif "don't" in phrase_lower or "can't" in phrase_lower:
+            # Already has negation
+            pass
         else:
-            return word + 'ing'
+            # Add sarcastic "totally not" version
+            variations.append({
+                "text": f"Totally not {phrase_lower}".title(),
+                "type": "humor"
+            })
 
-    def _is_too_similar(self, var: str, original: str) -> bool:
-        """Check if variation is too similar to original."""
-        var_words = set(var.split())
-        orig_words = set(original.split())
-
-        # If only 1 word different and phrase is short, too similar
-        diff = var_words.symmetric_difference(orig_words)
-        if len(diff) <= 1 and len(orig_words) <= 4:
-            return True
-
-        return False
+        return variations
 
     def _clean_text(self, text: str) -> str:
         """Clean and format text properly."""
         # Remove extra spaces
         text = ' '.join(text.split())
 
-        # Capitalize first letter
-        if text:
-            text = text[0].upper() + text[1:]
+        # Capitalize first letter of each word for title case
+        # But keep small words lowercase
+        small_words = {'a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'by', 'is', 'my'}
+        words = text.split()
+        result = []
+        for i, word in enumerate(words):
+            if i == 0 or word.lower() not in small_words:
+                result.append(word.capitalize())
+            else:
+                result.append(word.lower())
 
-        return text
+        return ' '.join(result)
 
     def suggest_niches(self, phrase: str) -> List[str]:
         """Suggest niches that might work well with a phrase."""
@@ -463,3 +308,7 @@ class VariationGenerator:
             matching_niches = ["humor", "lifestyle", "general"]
 
         return matching_niches
+
+
+# Singleton instance
+variation_generator = VariationGenerator()
