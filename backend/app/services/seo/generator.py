@@ -1,59 +1,55 @@
-"""Amazon Merch SEO listing generator - Fully TOS compliant, design-focused only."""
+"""Amazon Merch SEO listing generator - Human-sounding, compliant, publishable."""
 import re
 import random
-import logging
 from typing import Dict, Any, List, Optional
-
-logger = logging.getLogger(__name__)
 
 
 class SEOGenerator:
     """
-    Generate Amazon Merch listings that are 100% TOS compliant.
+    Generate Amazon Merch listings that sound like real human sellers.
 
-    AMAZON RULES ENFORCED:
-    - NO promotional phrases (gift, perfect for, best seller, etc.)
-    - NO product quality claims (lightweight, soft, comfortable)
-    - NO special effects claims (glitter, metallic, glow)
-    - NO texture claims (leather, wood, marble)
-    - NO suggested use (birthday, Christmas, etc.)
-    - Content must ONLY describe the design itself
+    PRIORITIES:
+    1. Amazon compliance (no rejections)
+    2. Natural, readable language
+    3. Buyer search intent
+    4. Meaning and attitude over design description
+
+    DO NOT:
+    - Describe fonts, typography, spacing, or layout
+    - Sound like a graphic design analysis
+    - Use promotional language
+    - Mention gifts, occasions, or special uses
     """
 
-    # Words/phrases FORBIDDEN by Amazon - will cause rejection
+    # Words/phrases that will get listings REJECTED
     FORBIDDEN_TERMS = [
-        # Promotional/Marketing (STRICTLY FORBIDDEN)
+        # Promotional/Marketing
         "gift", "present", "perfect for", "great for", "ideal for",
         "best seller", "bestseller", "top rated", "#1", "number one",
-        "popular", "trending", "hot", "new", "exclusive", "limited edition",
+        "must have", "must-have", "limited edition", "exclusive",
         "sale", "discount", "deal", "cheap", "affordable", "bargain",
-        "free shipping", "fast shipping", "prime", "amazon",
+        "free shipping", "prime", "amazon",
 
-        # Suggested Use/Occasions (FORBIDDEN - unrelated to design)
+        # Occasions (unrelated to design)
         "birthday", "christmas", "holiday", "mother's day", "father's day",
         "valentine", "anniversary", "graduation", "wedding", "baby shower",
         "thanksgiving", "easter", "halloween", "new year",
 
-        # Quality Claims (FORBIDDEN - not about design)
-        "high quality", "premium quality", "best quality", "top quality",
-        "100%", "guaranteed", "authentic", "genuine", "official",
-        "durable", "long lasting", "comfortable", "soft", "lightweight",
-        "breathable", "stretchy", "fitted", "relaxed fit", "slim fit",
+        # Textures/Materials (misleading)
+        "glitter", "sparkle", "metallic", "foil", "gold", "silver",
+        "neon", "glow", "glow in dark", "holographic", "embossed",
+        "leather", "wood", "marble", "diamond", "sequin", "velvet",
 
-        # Product Terms (Amazon adds these automatically)
+        # Product/Quality Claims
+        "high quality", "premium", "soft", "comfortable", "lightweight",
+        "breathable", "cotton", "polyester", "fabric",
         "t-shirt", "tshirt", "shirt", "tee", "hoodie", "sweatshirt",
-        "tank top", "long sleeve", "pullover", "apparel", "clothing",
-        "cotton", "polyester", "fabric", "material",
 
-        # Texture Claims (FORBIDDEN - misleading)
-        "glitter", "sparkle", "metallic", "foil", "gold", "rose gold",
-        "silver", "neon", "glow", "glow in dark", "holographic",
-        "sequin", "leather", "wood", "marble", "diamond", "gem",
-        "fuzzy", "furry", "velvet", "silk", "satin",
-
-        # Other Violations
-        "licensed", "trademarked", "copyright", "patent",
-        "free", "bonus", "extra", "limited time",
+        # Typography/Design (sounds robotic - AVOID)
+        "typography", "font", "lettering", "typeface", "bold text",
+        "script font", "hand-drawn", "graphic design", "artwork",
+        "visual composition", "text arrangement", "design elements",
+        "motif", "illustration", "graphic",
     ]
 
     # Character limits per Amazon's requirements
@@ -64,109 +60,129 @@ class SEOGenerator:
         "bullet_2": 256,
         "description_min": 75,
         "description_max": 2000,
-        "keywords": 250,  # bytes, not chars
+        "keywords": 250,
     }
 
-    # Design-focused descriptors by mood/style
-    DESIGN_STYLES = {
-        "funny": ["humorous", "witty", "clever", "amusing", "comedic"],
-        "sarcastic": ["sardonic", "ironic", "dry humor", "satirical", "tongue-in-cheek"],
-        "motivational": ["inspiring", "uplifting", "encouraging", "empowering"],
-        "cute": ["adorable", "charming", "sweet", "delightful", "endearing"],
-        "vintage": ["retro", "classic", "nostalgic", "old-school", "throwback"],
-        "bold": ["striking", "eye-catching", "standout", "attention-grabbing"],
-        "minimal": ["simple", "clean", "understated", "elegant", "sleek"],
+    # Attitude/vibe descriptors by tone
+    TONE_VIBES = {
+        "funny": ["humor", "laughs", "wit", "comedy"],
+        "sarcastic": ["sarcasm", "dry wit", "irony", "sass"],
+        "motivational": ["motivation", "drive", "ambition", "hustle"],
+        "wholesome": ["positivity", "warmth", "good vibes"],
+        "edgy": ["attitude", "edge", "boldness"],
+        "proud": ["pride", "confidence", "self-expression"],
+        "relatable": ["real talk", "honesty", "everyday life"],
+        "aesthetic": ["vibe", "mood", "energy"],
     }
 
-    # Niche-specific design vocabulary (describes the design, not the product)
-    NICHE_VOCABULARY = {
+    # Audience descriptors by niche
+    NICHE_AUDIENCES = {
         "coffee": {
-            "design_elements": ["coffee cup graphic", "steam illustration", "coffee bean motif", "espresso imagery", "barista-themed artwork"],
-            "typography": ["bold lettering", "script font", "vintage typography", "hand-drawn text"],
-            "themes": ["caffeine culture", "morning routine", "coffee appreciation", "barista life"],
+            "people": ["coffee lovers", "caffeine addicts", "morning people"],
+            "contexts": ["before the first cup", "the daily grind", "caffeine dependency"],
+            "mindsets": ["need coffee to function", "coffee is life", "don't talk before coffee"],
         },
         "dogs": {
-            "design_elements": ["paw print graphic", "dog silhouette", "bone motif", "puppy illustration", "canine artwork"],
-            "typography": ["playful font", "bold text", "fun lettering"],
-            "themes": ["pet ownership", "dog walking", "puppy love", "canine companionship"],
+            "people": ["dog owners", "dog parents", "pet lovers"],
+            "contexts": ["life with dogs", "the dog parent life", "four-legged family"],
+            "mindsets": ["dogs over people", "my dog is family", "rescue parent"],
         },
         "cats": {
-            "design_elements": ["cat silhouette", "paw print motif", "whisker illustration", "feline graphic"],
-            "typography": ["whimsical font", "elegant script", "playful text"],
-            "themes": ["cat ownership", "feline behavior", "cat appreciation"],
+            "people": ["cat owners", "cat lovers", "cat parents"],
+            "contexts": ["life with cats", "feline chaos", "cat parent struggles"],
+            "mindsets": ["cats rule", "proud cat person", "crazy cat energy"],
         },
         "fitness": {
-            "design_elements": ["dumbbell graphic", "muscle illustration", "gym equipment motif"],
-            "typography": ["bold athletic font", "strong lettering", "impact text"],
-            "themes": ["workout culture", "gym lifestyle", "fitness dedication"],
+            "people": ["gym goers", "fitness enthusiasts", "workout warriors"],
+            "contexts": ["gym life", "the daily grind", "leg day"],
+            "mindsets": ["no excuses", "earn it", "discipline over motivation"],
         },
         "nursing": {
-            "design_elements": ["medical symbol", "heart monitor graphic", "stethoscope illustration"],
-            "typography": ["professional font", "clean text", "modern lettering"],
-            "themes": ["healthcare profession", "nursing dedication", "medical field"],
+            "people": ["nurses", "healthcare workers", "RNs"],
+            "contexts": ["long shifts", "hospital life", "saving lives"],
+            "mindsets": ["nurses run on caffeine", "night shift survivor", "scrub life"],
         },
         "teaching": {
-            "design_elements": ["apple graphic", "book illustration", "classroom motif", "pencil imagery"],
-            "typography": ["chalk-style font", "educational text", "friendly lettering"],
-            "themes": ["education profession", "classroom life", "teaching dedication"],
+            "people": ["teachers", "educators", "classroom warriors"],
+            "contexts": ["classroom chaos", "lesson planning", "parent emails"],
+            "mindsets": ["teachers change lives", "summer countdown", "coffee and patience"],
         },
         "mom": {
-            "design_elements": ["heart graphic", "family illustration", "decorative text"],
-            "typography": ["script font", "elegant lettering", "warm text style"],
-            "themes": ["motherhood", "parenting life", "family dynamics"],
+            "people": ["moms", "mothers", "mama bears"],
+            "contexts": ["mom life", "parenting chaos", "tiny humans"],
+            "mindsets": ["mom mode", "tired but blessed", "chaos coordinator"],
         },
         "dad": {
-            "design_elements": ["tool graphic", "masculine illustration", "bold imagery"],
-            "typography": ["strong font", "bold lettering", "classic text"],
-            "themes": ["fatherhood", "dad humor", "parenting life"],
+            "people": ["dads", "fathers", "dad joke enthusiasts"],
+            "contexts": ["dad life", "fatherhood", "raising kids"],
+            "mindsets": ["dad jokes", "grill master", "fix-it mentality"],
         },
         "gaming": {
-            "design_elements": ["controller graphic", "pixel art style", "game-inspired imagery"],
-            "typography": ["digital font", "pixel text", "arcade lettering"],
-            "themes": ["gamer culture", "video game lifestyle", "gaming humor"],
-        },
-        "fishing": {
-            "design_elements": ["fish graphic", "hook illustration", "rod motif", "water imagery"],
-            "typography": ["outdoor font", "rustic text", "natural lettering"],
-            "themes": ["angler lifestyle", "fishing culture", "outdoor activity"],
-        },
-        "hunting": {
-            "design_elements": ["deer silhouette", "antler graphic", "outdoor motif"],
-            "typography": ["rugged font", "wilderness text", "bold lettering"],
-            "themes": ["hunter lifestyle", "outdoor tradition", "wildlife appreciation"],
-        },
-        "beer": {
-            "design_elements": ["hop graphic", "mug illustration", "brewery motif"],
-            "typography": ["vintage font", "pub-style text", "bold lettering"],
-            "themes": ["craft beer culture", "brewing appreciation", "beer enthusiasm"],
-        },
-        "wine": {
-            "design_elements": ["wine glass graphic", "grape illustration", "vineyard motif"],
-            "typography": ["elegant script", "sophisticated font", "refined text"],
-            "themes": ["wine appreciation", "vineyard culture", "sommelier lifestyle"],
-        },
-        "anxiety": {
-            "design_elements": ["heart graphic", "brain illustration", "awareness ribbon"],
-            "typography": ["gentle font", "supportive text", "warm lettering"],
-            "themes": ["mental health awareness", "self-care", "emotional wellbeing"],
+            "people": ["gamers", "players", "gaming enthusiasts"],
+            "contexts": ["gaming sessions", "respawn life", "rage quit moments"],
+            "mindsets": ["one more game", "sleep is optional", "controller life"],
         },
         "introvert": {
-            "design_elements": ["book graphic", "home illustration", "quiet motif"],
-            "typography": ["understated font", "simple text", "minimal lettering"],
-            "themes": ["introvert lifestyle", "solitude appreciation", "quiet personality"],
+            "people": ["introverts", "homebodies", "quiet ones"],
+            "contexts": ["staying in", "social battery drained", "alone time"],
+            "mindsets": ["peopled out", "recharging", "antisocial butterfly"],
         },
         "sarcasm": {
-            "design_elements": ["speech bubble graphic", "bold illustration", "expressive imagery"],
-            "typography": ["impactful font", "statement text", "bold lettering"],
-            "themes": ["dry humor", "witty commentary", "ironic expression"],
+            "people": ["sarcastic souls", "witty minds", "dry humor fans"],
+            "contexts": ["everyday annoyances", "unfiltered thoughts", "real talk"],
+            "mindsets": ["fluent in sarcasm", "professionally petty", "allergic to stupidity"],
+        },
+        "work": {
+            "people": ["office workers", "9-to-5ers", "remote workers"],
+            "contexts": ["work life", "meeting fatigue", "email overload"],
+            "mindsets": ["surviving meetings", "living for the weekend", "Friday countdown"],
+        },
+        "beer": {
+            "people": ["beer lovers", "craft beer fans", "brew enthusiasts"],
+            "contexts": ["happy hour", "weekend vibes", "cold ones"],
+            "mindsets": ["beer o'clock", "hoppy thoughts", "brewery hopper"],
+        },
+        "wine": {
+            "people": ["wine lovers", "wine enthusiasts", "vino fans"],
+            "contexts": ["wine time", "unwinding", "pour decisions"],
+            "mindsets": ["wine not", "sip happens", "wine is the answer"],
+        },
+        "fishing": {
+            "people": ["anglers", "fishermen", "fishing enthusiasts"],
+            "contexts": ["on the water", "early mornings", "the big catch"],
+            "mindsets": ["hooked on fishing", "reel therapy", "tight lines life"],
+        },
+        "hunting": {
+            "people": ["hunters", "outdoorsmen", "wildlife enthusiasts"],
+            "contexts": ["hunting season", "the great outdoors", "early mornings"],
+            "mindsets": ["hunt life", "outdoor soul", "buck fever"],
+        },
+        "anxiety": {
+            "people": ["anxious minds", "overthinkers", "worry warriors"],
+            "contexts": ["the struggle", "mental health journey", "daily battles"],
+            "mindsets": ["anxious but trying", "one day at a time", "it's okay to not be okay"],
         },
     }
 
-    GENERIC_VOCABULARY = {
-        "design_elements": ["bold graphic", "eye-catching illustration", "decorative motif"],
-        "typography": ["modern font", "clear text", "stylish lettering"],
-        "themes": ["self-expression", "personal style", "unique statement"],
+    GENERIC_AUDIENCE = {
+        "people": ["people who get it", "like-minded individuals", "those who relate"],
+        "contexts": ["everyday life", "real moments", "honest expression"],
+        "mindsets": ["keeping it real", "saying what you mean", "no filter needed"],
     }
+
+    # Brand name templates (short, neutral, scalable)
+    BRAND_TEMPLATES = [
+        "Statement Co",
+        "Real Talk Prints",
+        "Vibe Check",
+        "Mood Apparel",
+        "Say It Loud",
+        "Attitude Wear",
+        "No Filter Tees",
+        "Honest Threads",
+        "Word Up",
+        "Express Wear",
+    ]
 
     def generate(
         self,
@@ -175,79 +191,103 @@ class SEOGenerator:
         style: str = "funny"
     ) -> Dict[str, Any]:
         """
-        Generate a fully TOS-compliant Amazon Merch listing.
+        Generate a complete, compliant, publishable Amazon Merch listing.
 
-        Returns:
-            Dict with title, brand, bullet_1, bullet_2, description, keywords
-            All content describes the DESIGN ONLY, no promotional language.
+        Returns dict with title, brand, bullet_1, bullet_2, description, keywords.
+        All content focuses on MEANING and ATTITUDE, not design description.
         """
-        vocab = self._get_vocabulary(niche)
-        style_words = self.DESIGN_STYLES.get(style, self.DESIGN_STYLES["funny"])
+        audience = self._get_audience(niche)
+        vibes = self.TONE_VIBES.get(style, self.TONE_VIBES["funny"])
 
         result = {
             "phrase": phrase,
             "niche": niche or "general",
             "style": style,
-            "title": self._generate_title(phrase, niche),
-            "brand": self._generate_brand(niche),
-            "bullet_1": self._generate_bullet_1(phrase, vocab, style_words),
-            "bullet_2": self._generate_bullet_2(phrase, vocab),
-            "description": self._generate_description(phrase, niche, vocab, style_words),
-            "keywords": self._generate_keywords(phrase, niche, vocab),
+            "title": self._generate_title(phrase, style, niche),
+            "brand": self._generate_brand(),
+            "bullet_1": self._generate_bullet_1(phrase, style, vibes),
+            "bullet_2": self._generate_bullet_2(phrase, audience),
+            "description": self._generate_description(phrase, style, audience, vibes),
+            "keywords": self._generate_keywords(phrase, niche, audience),
             "validation": {},
         }
 
-        # Validate everything
         result["validation"] = self._validate_all(result)
-
         return result
 
-    def _get_vocabulary(self, niche: Optional[str]) -> Dict:
-        """Get design vocabulary for the niche."""
-        if niche and niche.lower() in self.NICHE_VOCABULARY:
-            return self.NICHE_VOCABULARY[niche.lower()]
-        return self.GENERIC_VOCABULARY
+    def _get_audience(self, niche: Optional[str]) -> Dict:
+        """Get audience info for the niche."""
+        if niche and niche.lower() in self.NICHE_AUDIENCES:
+            return self.NICHE_AUDIENCES[niche.lower()]
+        return self.GENERIC_AUDIENCE
 
-    def _generate_title(self, phrase: str, niche: Optional[str]) -> Dict[str, Any]:
+    def _generate_title(self, phrase: str, style: str, niche: Optional[str]) -> Dict[str, Any]:
         """
         Generate title (60 chars MAX).
-
-        Format: Describes what the design says/shows.
-        NO promotional language, NO product words.
+        Lead with phrase, add 1-2 relevant modifiers.
         """
-        # Clean the phrase
-        clean = self._clean_text(phrase)
+        clean_phrase = phrase.strip()
 
-        # Build title options - just describe what the design says
-        if niche:
-            niche_clean = niche.title()
-            options = [
-                f"{clean} - {niche_clean} Design",
-                f"{clean} {niche_clean} Typography",
-                f"{niche_clean} Quote - {clean}",
-                f"{clean} - {niche_clean} Saying",
-                f"{clean}",
-            ]
-        else:
-            options = [
-                f"{clean} - Funny Quote Design",
-                f"{clean} Typography Art",
-                f"{clean} Statement Design",
-                f"{clean}",
-            ]
+        # Style modifiers
+        style_mods = {
+            "funny": ["Funny", "Humor", "Hilarious"],
+            "sarcastic": ["Sarcastic", "Sassy", "Witty"],
+            "motivational": ["Motivational", "Inspiring"],
+            "wholesome": ["Positive", "Uplifting"],
+            "edgy": ["Bold", "Edgy"],
+            "proud": ["Proud"],
+            "relatable": ["Relatable", "Real"],
+            "aesthetic": ["Aesthetic", "Vibe"],
+        }
 
-        # Find first option that fits
-        for option in options:
-            if len(option) <= self.LIMITS["title"]:
+        mod = random.choice(style_mods.get(style, ["Funny"]))
+
+        # Niche modifiers
+        niche_mods = {
+            "coffee": "Coffee Lover",
+            "dogs": "Dog Owner",
+            "cats": "Cat Person",
+            "fitness": "Gym",
+            "nursing": "Nurse",
+            "teaching": "Teacher",
+            "mom": "Mom",
+            "dad": "Dad",
+            "gaming": "Gamer",
+            "work": "Office",
+            "beer": "Beer Lover",
+            "wine": "Wine Lover",
+            "fishing": "Fishing",
+            "hunting": "Hunting",
+            "introvert": "Introvert",
+            "sarcasm": "Sarcastic",
+            "anxiety": "Anxiety",
+        }
+
+        niche_mod = niche_mods.get(niche, "") if niche else ""
+
+        # Build title options
+        options = []
+
+        if niche_mod:
+            options.append(f"{clean_phrase} - {mod} {niche_mod}")
+            options.append(f"{clean_phrase} {mod} {niche_mod}")
+
+        options.append(f"{clean_phrase} - {mod} Saying")
+        options.append(f"{clean_phrase} {mod} Quote")
+        options.append(f"{clean_phrase}")
+
+        # Find first that fits
+        for title in options:
+            if len(title) <= self.LIMITS["title"]:
                 return {
-                    "text": option,
-                    "length": len(option),
+                    "text": title,
+                    "length": len(title),
                     "limit": self.LIMITS["title"],
                     "compliant": True,
                 }
 
         # Truncate if needed
-        truncated = clean[:self.LIMITS["title"] - 3] + "..."
+        truncated = clean_phrase[:self.LIMITS["title"]]
         return {
             "text": truncated,
             "length": len(truncated),
@@ -255,214 +295,173 @@ class SEOGenerator:
             "compliant": True,
         }
 
-    def _generate_brand(self, niche: Optional[str]) -> Dict[str, Any]:
-        """
-        Generate brand name (50 chars MAX).
-
-        Should be a professional-sounding brand.
-        """
-        if niche:
-            niche_title = niche.title().replace(" ", "")
-            brands = [
-                f"{niche_title} Quote Designs",
-                f"{niche_title} Typography Co",
-                f"{niche_title} Statement Art",
-                f"Funny {niche_title} Quotes",
-                f"{niche_title} Apparel Designs",
-            ]
-        else:
-            brands = [
-                "Quote Typography Designs",
-                "Statement Art Co",
-                "Witty Quote Collection",
-                "Bold Statement Designs",
-                "Typography Art Studio",
-            ]
-
-        # Pick one that fits
-        for brand in brands:
-            if len(brand) <= self.LIMITS["brand"]:
-                return {
-                    "text": brand,
-                    "length": len(brand),
-                    "limit": self.LIMITS["brand"],
-                    "compliant": True,
-                }
-
+    def _generate_brand(self) -> Dict[str, Any]:
+        """Generate short, neutral brand name."""
+        brand = random.choice(self.BRAND_TEMPLATES)
         return {
-            "text": "Quote Designs",
-            "length": 13,
+            "text": brand,
+            "length": len(brand),
             "limit": self.LIMITS["brand"],
             "compliant": True,
         }
 
-    def _generate_bullet_1(self, phrase: str, vocab: Dict, style_words: List[str]) -> Dict[str, Any]:
+    def _generate_bullet_1(self, phrase: str, style: str, vibes: List[str]) -> Dict[str, Any]:
         """
-        Generate first bullet point (256 chars MAX).
-
-        Describes WHAT the design shows - the text, style, and visual elements.
-        NO promotional language.
+        Bullet 1: Meaning / attitude / vibe of the phrase.
+        Focus on what it MEANS, not how it looks.
         """
-        style = random.choice(style_words)
-        element = random.choice(vocab["design_elements"])
-        typo = random.choice(vocab["typography"])
+        vibe = random.choice(vibes)
+        clean = phrase.strip()
 
-        bullets = [
-            f"This design features the {style} phrase \"{phrase}\" displayed in {typo}. The {element} creates a bold visual statement that expresses personality and attitude.",
-            f"Features the saying \"{phrase}\" in {typo} style. This {style} design uses {element} to create an expressive and memorable look.",
-            f"Displays \"{phrase}\" with {typo} and {element}. This {style} artwork makes a clear statement about personal style and humor.",
+        templates = [
+            f'"{clean}" — because sometimes you just have to say it. This is for anyone who appreciates a little {vibe} and isn\'t afraid to show it.',
+            f'"{clean}" says it all. Pure, unfiltered {vibe} for those who get it.',
+            f'Some things just need to be said out loud. "{clean}" is that energy — honest, real, and full of {vibe}.',
+            f'"{clean}" — when words perfectly capture what you\'re feeling. It\'s that {vibe} we all need sometimes.',
+            f'This says what everyone\'s thinking. "{clean}" is {vibe} in its purest form.',
         ]
 
-        # Pick one that fits
-        for bullet in bullets:
-            clean = self._clean_text(bullet)
-            if len(clean) <= self.LIMITS["bullet_1"]:
-                return {
-                    "text": clean,
-                    "length": len(clean),
-                    "limit": self.LIMITS["bullet_1"],
-                    "compliant": True,
-                }
+        bullet = random.choice(templates)
 
-        # Fallback
-        fallback = f"This design displays the phrase \"{phrase}\" in a {style} typographic style."
+        if len(bullet) > self.LIMITS["bullet_1"]:
+            bullet = bullet[:self.LIMITS["bullet_1"] - 3] + "..."
+
         return {
-            "text": fallback[:self.LIMITS["bullet_1"]],
-            "length": len(fallback[:self.LIMITS["bullet_1"]]),
+            "text": bullet,
+            "length": len(bullet),
             "limit": self.LIMITS["bullet_1"],
-            "compliant": True,
+            "compliant": len(bullet) <= self.LIMITS["bullet_1"],
         }
 
-    def _generate_bullet_2(self, phrase: str, vocab: Dict) -> Dict[str, Any]:
+    def _generate_bullet_2(self, phrase: str, audience: Dict) -> Dict[str, Any]:
         """
-        Generate second bullet point (256 chars MAX).
-
-        Describes the design theme and who appreciates this type of humor/statement.
-        NO promotional language, NO "perfect for [occasion]".
+        Bullet 2: Who relates to it (job, lifestyle, personality, mindset).
+        NO "perfect for" or promotional framing.
         """
-        theme = random.choice(vocab["themes"])
+        people = random.choice(audience["people"])
+        mindset = random.choice(audience["mindsets"])
+        context = random.choice(audience["contexts"])
 
-        bullets = [
-            f"The design celebrates {theme} through expressive typography. The bold text and visual composition create an attention-grabbing statement piece.",
-            f"This artwork represents {theme} with its distinctive lettering style. The design composition emphasizes the message while maintaining visual appeal.",
-            f"Celebrates {theme} through creative typography and thoughtful design. The visual elements work together to convey the intended message clearly.",
+        templates = [
+            f"If you know, you know. {people.capitalize()} who live that {mindset} life will instantly get this.",
+            f"Made for {people} who understand {context}. It's not just words — it's a whole mood.",
+            f"{people.capitalize()} get it. This is {context} summed up perfectly.",
+            f"Real recognizes real. {people.capitalize()} living that {mindset} lifestyle know exactly what this means.",
+            f"This one's for the {people}. If {context} is your reality, you'll relate.",
         ]
 
-        for bullet in bullets:
-            clean = self._clean_text(bullet)
-            if len(clean) <= self.LIMITS["bullet_2"]:
-                return {
-                    "text": clean,
-                    "length": len(clean),
-                    "limit": self.LIMITS["bullet_2"],
-                    "compliant": True,
-                }
+        bullet = random.choice(templates)
 
-        fallback = f"This design represents {theme} through creative typography and bold visual elements."
+        if len(bullet) > self.LIMITS["bullet_2"]:
+            bullet = bullet[:self.LIMITS["bullet_2"] - 3] + "..."
+
         return {
-            "text": fallback[:self.LIMITS["bullet_2"]],
-            "length": len(fallback[:self.LIMITS["bullet_2"]]),
+            "text": bullet,
+            "length": len(bullet),
             "limit": self.LIMITS["bullet_2"],
-            "compliant": True,
+            "compliant": len(bullet) <= self.LIMITS["bullet_2"],
         }
 
     def _generate_description(
         self,
         phrase: str,
-        niche: Optional[str],
-        vocab: Dict,
-        style_words: List[str]
+        style: str,
+        audience: Dict,
+        vibes: List[str]
     ) -> Dict[str, Any]:
         """
-        Generate product description (75-2000 chars).
-
-        Thoroughly describes the design - the text, typography, visual style,
-        and theme. NO promotional language, NO suggested uses/occasions.
+        Description (75-2000 chars).
+        Expand on meaning and tone. Explain why people connect.
+        Sound like a real seller, not a design analyzer.
         """
-        style = random.choice(style_words)
-        element = random.choice(vocab["design_elements"])
-        typo = random.choice(vocab["typography"])
-        theme = random.choice(vocab["themes"])
-        niche_name = niche.title() if niche else "statement"
+        clean = phrase.strip()
+        vibe = random.choice(vibes)
+        people = random.choice(audience["people"])
+        mindset = random.choice(audience["mindsets"])
+        context = random.choice(audience["contexts"])
 
-        description = f"""This {niche_name} design prominently displays the phrase "{phrase}" as its central element.
+        descriptions = [
+            f'''"{clean}"
 
-Design Details:
-The artwork features {typo} that gives the text a distinctive {style} appearance. The {element} adds visual interest and reinforces the overall theme of the design.
+We've all been there. That moment when {context} hits and you just need to express yourself. This captures that feeling perfectly.
 
-Typography and Style:
-The lettering has been carefully crafted to maximize readability while conveying the intended tone. The text arrangement creates a balanced composition that draws the eye to the message.
+{people.capitalize()} will instantly get it. There's something satisfying about wearing something that says exactly what you're thinking. No filter, no apologies — just pure {vibe}.
 
-Theme:
-This design speaks to {theme}. The visual elements and text work together to express a specific attitude and perspective that resonates with people who appreciate this type of {style} expression.
+Whether you say it out loud or let your clothes do the talking, this one speaks volumes. It's that {mindset} energy that connects people who just get it.''',
 
-Visual Composition:
-The design uses contrast and spacing effectively to ensure the message stands out. The overall aesthetic is {style} and attention-grabbing while remaining tasteful and wearable."""
+            f'''"{clean}" — some things don't need explaining.
 
-        clean = self._clean_text(description)
+If you've ever felt that {mindset} vibe, you already know. This is for {people} who aren't afraid to express what they're really thinking.
+
+{context.capitalize()} is real, and sometimes you need a way to show it. That's what this is about — {vibe} that resonates, a message that lands.
+
+Wear it when you mean it. The right people will get it.''',
+
+            f'''"{clean}"
+
+Words that just hit different. If you're one of those {people} who lives {context}, this probably made you smile — or at least nod.
+
+There's a reason some phrases just stick. They capture something real, something relatable. This is that {vibe} energy.
+
+It's not trying too hard. It doesn't overthink it. It just says what needs to be said. {mindset.capitalize()} is a way of life, and this fits right in.''',
+        ]
+
+        description = random.choice(descriptions)
 
         # Ensure within limits
-        if len(clean) < self.LIMITS["description_min"]:
-            # Pad if too short (shouldn't happen with above template)
-            clean += " This design makes a clear visual statement."
+        if len(description) < self.LIMITS["description_min"]:
+            description += f"\n\n{people.capitalize()} everywhere relate to this."
 
-        if len(clean) > self.LIMITS["description_max"]:
-            clean = clean[:self.LIMITS["description_max"] - 3] + "..."
+        if len(description) > self.LIMITS["description_max"]:
+            description = description[:self.LIMITS["description_max"] - 3] + "..."
+
+        compliant = self.LIMITS["description_min"] <= len(description) <= self.LIMITS["description_max"]
 
         return {
-            "text": clean,
-            "length": len(clean),
+            "text": description,
+            "length": len(description),
             "limit_min": self.LIMITS["description_min"],
             "limit_max": self.LIMITS["description_max"],
-            "compliant": self.LIMITS["description_min"] <= len(clean) <= self.LIMITS["description_max"],
+            "compliant": compliant,
         }
 
-    def _generate_keywords(self, phrase: str, niche: Optional[str], vocab: Dict) -> Dict[str, Any]:
+    def _generate_keywords(self, phrase: str, niche: Optional[str], audience: Dict) -> Dict[str, Any]:
         """
-        Generate backend search terms (250 bytes MAX).
-
-        Keywords should be search terms customers would use.
-        NO forbidden terms, NO duplicate words.
+        Backend keywords (250 bytes MAX).
+        Natural keyword coverage, not stuffing.
         """
-        keywords = []
-        seen = set()
+        keywords = set()
 
         # Add phrase words (cleaned)
-        phrase_words = phrase.lower().split()
-        for word in phrase_words:
+        for word in phrase.lower().split():
             clean_word = re.sub(r'[^\w]', '', word)
-            if clean_word and len(clean_word) > 2 and clean_word not in seen:
-                if not self._is_forbidden(clean_word):
-                    keywords.append(clean_word)
-                    seen.add(clean_word)
+            if clean_word and len(clean_word) > 2 and not self._is_forbidden(clean_word):
+                keywords.add(clean_word)
 
-        # Add niche-related terms
+        # Add niche keywords
         if niche:
-            niche_words = niche.lower().split()
-            for word in niche_words:
-                if word not in seen and not self._is_forbidden(word):
-                    keywords.append(word)
-                    seen.add(word)
+            keywords.add(niche.lower())
 
-        # Add theme keywords (cleaned)
-        for theme in vocab.get("themes", []):
-            for word in theme.lower().split():
-                clean_word = re.sub(r'[^\w]', '', word)
-                if clean_word and len(clean_word) > 2 and clean_word not in seen:
-                    if not self._is_forbidden(clean_word):
-                        keywords.append(clean_word)
-                        seen.add(clean_word)
+        # Add audience-related keywords
+        for person in audience.get("people", []):
+            for word in person.lower().split():
+                clean = re.sub(r'[^\w]', '', word)
+                if clean and len(clean) > 2 and not self._is_forbidden(clean):
+                    keywords.add(clean)
 
-        # Add safe generic terms
-        safe_terms = ["quote", "saying", "design", "typography", "art", "funny", "humor", "statement"]
-        for term in safe_terms:
-            if term not in seen and not self._is_forbidden(term):
-                keywords.append(term)
-                seen.add(term)
+        # Add general search terms
+        general_terms = [
+            "funny", "saying", "quote", "humor", "sarcastic",
+            "attitude", "statement", "relatable", "mood", "vibe"
+        ]
+
+        for term in general_terms:
+            if not self._is_forbidden(term):
+                keywords.add(term)
 
         # Build string within byte limit
         result = ""
-        for kw in keywords:
+        for kw in list(keywords):
             test = f"{result} {kw}".strip()
             if len(test.encode('utf-8')) <= self.LIMITS["keywords"]:
                 result = test
@@ -477,23 +476,11 @@ The design uses contrast and spacing effectively to ensure the message stands ou
             "compliant": byte_count <= self.LIMITS["keywords"],
         }
 
-    def _clean_text(self, text: str) -> str:
-        """Remove any forbidden terms from text."""
-        result = text
-        for term in self.FORBIDDEN_TERMS:
-            # Case insensitive replacement
-            pattern = re.compile(re.escape(term), re.IGNORECASE)
-            result = pattern.sub("", result)
-
-        # Clean up extra spaces
-        result = re.sub(r'\s+', ' ', result).strip()
-        return result
-
     def _is_forbidden(self, word: str) -> bool:
         """Check if a word is forbidden."""
         word_lower = word.lower()
         for term in self.FORBIDDEN_TERMS:
-            if term.lower() == word_lower:
+            if term.lower() == word_lower or term.lower() in word_lower:
                 return True
         return False
 
@@ -501,32 +488,29 @@ The design uses contrast and spacing effectively to ensure the message stands ou
         """Validate the entire listing."""
         issues = []
 
-        # Check title
+        # Check limits
         if result["title"]["length"] > self.LIMITS["title"]:
-            issues.append(f"Title exceeds {self.LIMITS['title']} character limit")
+            issues.append(f"Title exceeds {self.LIMITS['title']} chars")
 
-        # Check brand
         if result["brand"]["length"] > self.LIMITS["brand"]:
-            issues.append(f"Brand exceeds {self.LIMITS['brand']} character limit")
+            issues.append(f"Brand exceeds {self.LIMITS['brand']} chars")
 
-        # Check bullets
         if result["bullet_1"]["length"] > self.LIMITS["bullet_1"]:
-            issues.append(f"Bullet 1 exceeds {self.LIMITS['bullet_1']} character limit")
-        if result["bullet_2"]["length"] > self.LIMITS["bullet_2"]:
-            issues.append(f"Bullet 2 exceeds {self.LIMITS['bullet_2']} character limit")
+            issues.append(f"Bullet 1 exceeds {self.LIMITS['bullet_1']} chars")
 
-        # Check description
+        if result["bullet_2"]["length"] > self.LIMITS["bullet_2"]:
+            issues.append(f"Bullet 2 exceeds {self.LIMITS['bullet_2']} chars")
+
         desc_len = result["description"]["length"]
         if desc_len < self.LIMITS["description_min"]:
-            issues.append(f"Description below {self.LIMITS['description_min']} character minimum")
+            issues.append(f"Description below {self.LIMITS['description_min']} chars")
         if desc_len > self.LIMITS["description_max"]:
-            issues.append(f"Description exceeds {self.LIMITS['description_max']} character limit")
+            issues.append(f"Description exceeds {self.LIMITS['description_max']} chars")
 
-        # Check keywords
         if result["keywords"]["byte_count"] > self.LIMITS["keywords"]:
-            issues.append(f"Keywords exceed {self.LIMITS['keywords']} byte limit")
+            issues.append(f"Keywords exceed {self.LIMITS['keywords']} bytes")
 
-        # Check for forbidden terms in all text
+        # Check for forbidden terms
         all_text = " ".join([
             result["title"]["text"],
             result["brand"]["text"],
@@ -536,13 +520,13 @@ The design uses contrast and spacing effectively to ensure the message stands ou
         ]).lower()
 
         for term in self.FORBIDDEN_TERMS:
-            if term.lower() in all_text:
+            if f" {term.lower()} " in f" {all_text} ":
                 issues.append(f"Contains forbidden term: '{term}'")
 
         return {
             "is_compliant": len(issues) == 0,
             "issues": issues,
-            "checks_passed": 7 - len(issues),
+            "checks_passed": 7 - min(len(issues), 7),
             "total_checks": 7,
         }
 
@@ -555,12 +539,12 @@ The design uses contrast and spacing effectively to ensure the message stands ou
         return self.LIMITS
 
     def get_available_niches(self) -> List[str]:
-        """Return list of niches with vocabulary."""
-        return sorted(self.NICHE_VOCABULARY.keys())
+        """Return list of niches with audience data."""
+        return sorted(self.NICHE_AUDIENCES.keys())
 
     def get_available_styles(self) -> List[str]:
-        """Return list of available design styles."""
-        return list(self.DESIGN_STYLES.keys())
+        """Return list of available tones/styles."""
+        return list(self.TONE_VIBES.keys())
 
     def validate_listing(
         self,
@@ -570,52 +554,34 @@ The design uses contrast and spacing effectively to ensure the message stands ou
         description: str = None,
         backend_keywords: str = None
     ) -> Dict[str, Any]:
-        """
-        Validate existing listing content against Amazon TOS rules.
-
-        Returns validation result with compliance status and issues.
-        """
+        """Validate existing listing content against Amazon rules."""
         issues = []
 
-        # Check title
-        if title:
-            if len(title) > self.LIMITS["title"]:
-                issues.append(f"Title exceeds {self.LIMITS['title']} character limit ({len(title)} chars)")
-            for term in self.FORBIDDEN_TERMS:
-                if term.lower() in title.lower():
-                    issues.append(f"Title contains forbidden term: '{term}'")
+        if title and len(title) > self.LIMITS["title"]:
+            issues.append(f"Title exceeds {self.LIMITS['title']} chars")
 
-        # Check bullet 1
-        if bullet_1:
-            if len(bullet_1) > self.LIMITS["bullet_1"]:
-                issues.append(f"Bullet 1 exceeds {self.LIMITS['bullet_1']} character limit ({len(bullet_1)} chars)")
-            for term in self.FORBIDDEN_TERMS:
-                if term.lower() in bullet_1.lower():
-                    issues.append(f"Bullet 1 contains forbidden term: '{term}'")
+        if bullet_1 and len(bullet_1) > self.LIMITS["bullet_1"]:
+            issues.append(f"Bullet 1 exceeds {self.LIMITS['bullet_1']} chars")
 
-        # Check bullet 2
-        if bullet_2:
-            if len(bullet_2) > self.LIMITS["bullet_2"]:
-                issues.append(f"Bullet 2 exceeds {self.LIMITS['bullet_2']} character limit ({len(bullet_2)} chars)")
-            for term in self.FORBIDDEN_TERMS:
-                if term.lower() in bullet_2.lower():
-                    issues.append(f"Bullet 2 contains forbidden term: '{term}'")
+        if bullet_2 and len(bullet_2) > self.LIMITS["bullet_2"]:
+            issues.append(f"Bullet 2 exceeds {self.LIMITS['bullet_2']} chars")
 
-        # Check description
         if description:
             if len(description) < self.LIMITS["description_min"]:
-                issues.append(f"Description below {self.LIMITS['description_min']} character minimum ({len(description)} chars)")
+                issues.append(f"Description below {self.LIMITS['description_min']} chars")
             if len(description) > self.LIMITS["description_max"]:
-                issues.append(f"Description exceeds {self.LIMITS['description_max']} character limit ({len(description)} chars)")
-            for term in self.FORBIDDEN_TERMS:
-                if term.lower() in description.lower():
-                    issues.append(f"Description contains forbidden term: '{term}'")
+                issues.append(f"Description exceeds {self.LIMITS['description_max']} chars")
 
-        # Check keywords
         if backend_keywords:
             byte_count = len(backend_keywords.encode('utf-8'))
             if byte_count > self.LIMITS["keywords"]:
-                issues.append(f"Keywords exceed {self.LIMITS['keywords']} byte limit ({byte_count} bytes)")
+                issues.append(f"Keywords exceed {self.LIMITS['keywords']} bytes")
+
+        # Check forbidden terms
+        all_text = " ".join(filter(None, [title, bullet_1, bullet_2, description])).lower()
+        for term in self.FORBIDDEN_TERMS:
+            if term.lower() in all_text:
+                issues.append(f"Contains forbidden term: '{term}'")
 
         return {
             "is_compliant": len(issues) == 0,

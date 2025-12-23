@@ -12,36 +12,38 @@ import {
   Info,
 } from 'lucide-react'
 
-// Niches matching backend vocabulary
+// Niches matching backend audiences
 const NICHES = [
   { value: '', label: 'General' },
-  { value: 'coffee', label: '☕ Coffee' },
-  { value: 'dogs', label: '🐕 Dogs' },
-  { value: 'cats', label: '🐱 Cats' },
-  { value: 'fitness', label: '💪 Fitness' },
-  { value: 'nursing', label: '👩‍⚕️ Nursing' },
-  { value: 'teaching', label: '📚 Teaching' },
-  { value: 'mom', label: '👩 Mom' },
-  { value: 'dad', label: '👨 Dad' },
-  { value: 'gaming', label: '🎮 Gaming' },
-  { value: 'fishing', label: '🎣 Fishing' },
-  { value: 'hunting', label: '🦌 Hunting' },
-  { value: 'beer', label: '🍺 Beer' },
-  { value: 'wine', label: '🍷 Wine' },
-  { value: 'anxiety', label: '💙 Anxiety/Mental Health' },
-  { value: 'introvert', label: '📖 Introvert' },
-  { value: 'sarcasm', label: '😏 Sarcasm' },
+  { value: 'coffee', label: 'Coffee' },
+  { value: 'dogs', label: 'Dogs' },
+  { value: 'cats', label: 'Cats' },
+  { value: 'fitness', label: 'Fitness' },
+  { value: 'nursing', label: 'Nursing' },
+  { value: 'teaching', label: 'Teaching' },
+  { value: 'mom', label: 'Mom' },
+  { value: 'dad', label: 'Dad' },
+  { value: 'gaming', label: 'Gaming' },
+  { value: 'work', label: 'Work/Office' },
+  { value: 'fishing', label: 'Fishing' },
+  { value: 'hunting', label: 'Hunting' },
+  { value: 'beer', label: 'Beer' },
+  { value: 'wine', label: 'Wine' },
+  { value: 'anxiety', label: 'Anxiety/Mental Health' },
+  { value: 'introvert', label: 'Introvert' },
+  { value: 'sarcasm', label: 'Sarcasm' },
 ]
 
-// Styles matching backend DESIGN_STYLES
+// Tones matching backend TONE_VIBES
 const STYLES = [
   { value: 'funny', label: 'Funny' },
   { value: 'sarcastic', label: 'Sarcastic' },
   { value: 'motivational', label: 'Motivational' },
-  { value: 'cute', label: 'Cute' },
-  { value: 'vintage', label: 'Vintage' },
-  { value: 'bold', label: 'Bold' },
-  { value: 'minimal', label: 'Minimal' },
+  { value: 'wholesome', label: 'Wholesome' },
+  { value: 'edgy', label: 'Edgy' },
+  { value: 'proud', label: 'Proud' },
+  { value: 'relatable', label: 'Relatable' },
+  { value: 'aesthetic', label: 'Aesthetic' },
 ]
 
 // Amazon's exact character limits
