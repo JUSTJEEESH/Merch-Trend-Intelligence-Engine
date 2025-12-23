@@ -334,7 +334,11 @@ class SocialTrendsService:
 
         try:
             from pytrends.request import TrendReq
-            pytrends = TrendReq(hl='en-US', tz=360, timeout=(10, 25), retries=2)
+            # Try without extra params (compatibility with older urllib3)
+            try:
+                pytrends = TrendReq(hl='en-US', tz=360)
+            except Exception:
+                pytrends = TrendReq()
 
             # Get trending searches
             trending_df = pytrends.trending_searches(pn='united_states')
