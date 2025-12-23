@@ -100,6 +100,23 @@ async def get_trending_for_niche(niche: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/trending/refresh")
+async def refresh_trends():
+    """Clear trends cache and fetch fresh data from all sources."""
+    try:
+        social_trends_service.clear_cache()
+        # Fetch fresh data
+        trends = await social_trends_service.get_all_trends(15)
+        return {
+            "success": True,
+            "message": "Cache cleared and fresh trends fetched",
+            "data": trends,
+            "refreshed_at": trends.get("fetched_at")
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ============ Seasonal Calendar Routes ============
 
 @router.get("/calendar/upcoming")

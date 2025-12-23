@@ -105,6 +105,8 @@ export const getRedditTrends = (limit = 10) =>
   client.get(`/tools/trending/reddit?limit=${limit}`).then(res => res.data)
 export const getTrendingForNiche = (niche) =>
   client.get(`/tools/trending/niche/${niche}`).then(res => res.data)
+export const refreshTrends = () =>
+  client.post('/tools/trending/refresh').then(res => res.data)
 
 // Seasonal Calendar
 export const getUpcomingEvents = (days = 90) =>

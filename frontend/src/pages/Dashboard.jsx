@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useMutation } from '@tanstack/react-query'
-import { generateIdeas, generateVariations, checkTrademark } from '../api/client'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { generateIdeas, generateVariations, checkTrademark, getAllTrends, refreshTrends } from '../api/client'
 import {
   Sparkles,
   Loader2,
@@ -226,50 +226,7 @@ const NICHE_CATEGORIES = [
   { id: 'location', name: 'Location' },
 ]
 
-// Simulated trending data (would come from API in production)
-// Updated December 2024 - Current viral trends
-const TRENDING_NOW = [
-  // December 2024 Viral Trends
-  { phrase: "Moo Deng era", bsr: 320, trend: "+520%", platform: "TikTok" },
-  { phrase: "Hawk Tuah energy", bsr: 450, trend: "+480%", platform: "TikTok" },
-  { phrase: "Brat summer forever", bsr: 680, trend: "+420%", platform: "TikTok" },
-  { phrase: "Demure and mindful", bsr: 520, trend: "+380%", platform: "TikTok" },
-  { phrase: "Aura points negative", bsr: 780, trend: "+340%", platform: "TikTok" },
-  { phrase: "Brain rot certified", bsr: 890, trend: "+320%", platform: "TikTok" },
-  { phrase: "Looksmaxxing era", bsr: 1100, trend: "+290%", platform: "TikTok" },
-  { phrase: "Underconsumption core", bsr: 950, trend: "+275%", platform: "TikTok" },
-  { phrase: "Boysober 2024", bsr: 1250, trend: "+265%", platform: "TikTok" },
-  // Work Trends
-  { phrase: "Act your wage", bsr: 560, trend: "+420%", platform: "Amazon" },
-  { phrase: "Bare minimum Monday", bsr: 780, trend: "+310%", platform: "TikTok" },
-  { phrase: "Lazy girl job", bsr: 920, trend: "+285%", platform: "Amazon" },
-  { phrase: "Quiet quitting champion", bsr: 1100, trend: "+225%", platform: "Amazon" },
-  { phrase: "Meeting survivor", bsr: 1350, trend: "+195%", platform: "Amazon" },
-  // Mental Health / Relatable
-  { phrase: "Chronically online", bsr: 980, trend: "+245%", platform: "Amazon" },
-  { phrase: "Professional overthinker", bsr: 1200, trend: "+215%", platform: "Amazon" },
-  { phrase: "My toxic trait is", bsr: 850, trend: "+265%", platform: "TikTok" },
-  { phrase: "Anxious but making it", bsr: 1450, trend: "+185%", platform: "Amazon" },
-  { phrase: "Overstimulated moms club", bsr: 780, trend: "+235%", platform: "Amazon" },
-  // Slang / Internet Culture
-  { phrase: "Its giving main character", bsr: 1100, trend: "+195%", platform: "TikTok" },
-  { phrase: "Understood the assignment", bsr: 1350, trend: "+175%", platform: "Amazon" },
-  { phrase: "Ate and left no crumbs", bsr: 1580, trend: "+165%", platform: "TikTok" },
-  { phrase: "Rent free in my head", bsr: 1200, trend: "+185%", platform: "Amazon" },
-  { phrase: "Cooked and served", bsr: 1680, trend: "+155%", platform: "TikTok" },
-  // Lifestyle
-  { phrase: "Soft life advocate", bsr: 1450, trend: "+175%", platform: "TikTok" },
-  { phrase: "Feral girl energy", bsr: 1780, trend: "+165%", platform: "TikTok" },
-  { phrase: "Mob wife aesthetic", bsr: 1250, trend: "+195%", platform: "TikTok" },
-  { phrase: "Coquette coded", bsr: 1350, trend: "+185%", platform: "TikTok" },
-  { phrase: "Clean girl loading", bsr: 1890, trend: "+145%", platform: "TikTok" },
-  // Humor
-  { phrase: "Delulu is the solulu", bsr: 920, trend: "+225%", platform: "TikTok" },
-  { phrase: "NPC behavior", bsr: 1100, trend: "+205%", platform: "TikTok" },
-  { phrase: "Slay all day", bsr: 1450, trend: "+165%", platform: "Amazon" },
-  { phrase: "No thoughts head empty", bsr: 1250, trend: "+175%", platform: "Amazon" },
-  { phrase: "Touch grass please", bsr: 1680, trend: "+145%", platform: "Amazon" },
-]
+// Trending data is now fetched LIVE from Google Trends + Reddit
 
 const STORAGE_KEY = 'merch_engine_ideas'
 const FAVORITES_KEY = 'merch_engine_favorites'
@@ -308,6 +265,38 @@ export default function Dashboard() {
   const [showNicheDropdown, setShowNicheDropdown] = useState(false)
   const [searchFilter, setSearchFilter] = useState('')
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+
+  // Fetch LIVE trending data from backend
+  const {
+    data: trendsData,
+    isLoading: trendsLoading,
+    error: trendsError,
+    refetch: refetchTrends
+  } = useQuery({
+    queryKey: ['trends'],
+    queryFn: getAllTrends,
+    staleTime: 1000 * 60 * 15, // 15 minutes
+    refetchOnMount: true,
+  })
+
+  // Refresh mutation
+  const refreshMutation = useMutation({
+    mutationFn: refreshTrends,
+    onSuccess: (data) => {
+      refetchTrends()
+    },
+  })
+
+  // Convert API response to display format
+  const liveTrends = trendsData?.data?.combined?.map((t, idx) => ({
+    phrase: t.trend,
+    trend: t.growth || '+100%',
+    platform: t.platform || 'Google',
+    bsr: t.shirt_potential?.score ? Math.round(2000 - (t.shirt_potential.score * 15)) : 1000,
+    category: t.category,
+    isLive: t.is_live,
+    source: t.source,
+  })) || []
 
   // Export ideas to CSV
   const exportToCSV = (data, filename) => {
@@ -485,64 +474,123 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Trending Section */}
+      {/* Trending Section - LIVE DATA */}
       <div className="bg-gradient-to-r from-zinc-900 to-zinc-900/50 rounded-xl border border-zinc-800 p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <TrendingUp size={18} className="text-emerald-400" />
             <h2 className="text-base font-semibold text-zinc-200">Trending Now</h2>
-            <span className="text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full">Live</span>
-            <span className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full">{TRENDING_NOW.length} phrases</span>
+            {!trendsLoading && liveTrends.length > 0 && (
+              <>
+                <span className="text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full animate-pulse">LIVE</span>
+                <span className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full">{liveTrends.length} phrases</span>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded">Amazon</span>
+              <span className="px-2 py-1 bg-emerald-500/10 text-emerald-400 rounded">Google</span>
+              <span className="px-2 py-1 bg-orange-500/10 text-orange-400 rounded">Reddit</span>
               <span className="px-2 py-1 bg-pink-500/10 text-pink-400 rounded">TikTok</span>
-              <span className="px-2 py-1 bg-orange-500/10 text-orange-400 rounded">Etsy</span>
+              <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded">Twitter</span>
             </div>
-            <span className="text-xs text-zinc-500">Updated hourly</span>
+            <button
+              onClick={() => refreshMutation.mutate()}
+              disabled={refreshMutation.isPending || trendsLoading}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs text-zinc-300 transition-all disabled:opacity-50"
+            >
+              <RefreshCw size={12} className={refreshMutation.isPending ? 'animate-spin' : ''} />
+              <span>{refreshMutation.isPending ? 'Refreshing...' : 'Refresh'}</span>
+            </button>
           </div>
         </div>
 
-        {/* Scrollable trending grid */}
-        <div className="max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {TRENDING_NOW.sort((a, b) => parseInt(b.trend) - parseInt(a.trend)).map((item, idx) => (
-              <div
-                key={idx}
-                onClick={() => handlePhraseClick(item.phrase)}
-                className={`group bg-zinc-800/50 rounded-xl p-3 hover:bg-zinc-800 transition-all cursor-pointer border border-transparent hover:border-zinc-700 ${
-                  idx < 5 ? 'ring-1 ring-emerald-500/30' : ''
-                }`}
-              >
-                {idx < 5 && (
-                  <div className="flex items-center gap-1 mb-2">
-                    <Flame size={12} className="text-orange-400" />
-                    <span className="text-[10px] text-orange-400 font-medium">HOT</span>
-                  </div>
-                )}
-                <p className="text-sm font-medium text-zinc-200 mb-2 line-clamp-2">{item.phrase}</p>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-xs text-emerald-400">
-                    <ArrowUpRight size={12} />
-                    <span className="font-medium">{item.trend}</span>
-                  </div>
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${
-                    item.platform === 'TikTok' ? 'bg-pink-500/10 text-pink-400' :
-                    item.platform === 'Etsy' ? 'bg-orange-500/10 text-orange-400' :
-                    'bg-blue-500/10 text-blue-400'
-                  }`}>{item.platform}</span>
-                </div>
-                {item.bsr && (
-                  <div className="flex items-center gap-1 mt-2 text-[10px] text-zinc-500">
-                    <BarChart3 size={10} />
-                    <span>BSR ~{item.bsr.toLocaleString()}</span>
-                  </div>
-                )}
-              </div>
-            ))}
+        {/* Loading State */}
+        {trendsLoading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Loader2 size={24} className="animate-spin text-emerald-400 mx-auto mb-3" />
+              <p className="text-sm text-zinc-500">Fetching live trends from Google, Reddit, TikTok...</p>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Error State */}
+        {trendsError && !trendsLoading && (
+          <div className="text-center py-8">
+            <p className="text-red-400 text-sm mb-2">Failed to fetch trends</p>
+            <button
+              onClick={() => refetchTrends()}
+              className="text-emerald-400 text-sm hover:underline"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {/* Scrollable trending grid */}
+        {!trendsLoading && liveTrends.length > 0 && (
+          <div className="max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {liveTrends.sort((a, b) => parseInt(b.trend) - parseInt(a.trend)).map((item, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => handlePhraseClick(item.phrase)}
+                  className={`group bg-zinc-800/50 rounded-xl p-3 hover:bg-zinc-800 transition-all cursor-pointer border border-transparent hover:border-zinc-700 ${
+                    idx < 5 ? 'ring-1 ring-emerald-500/30' : ''
+                  }`}
+                >
+                  {idx < 5 && (
+                    <div className="flex items-center gap-1 mb-2">
+                      <Flame size={12} className="text-orange-400" />
+                      <span className="text-[10px] text-orange-400 font-medium">HOT</span>
+                    </div>
+                  )}
+                  <p className="text-sm font-medium text-zinc-200 mb-2 line-clamp-2">{item.phrase}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 text-xs text-emerald-400">
+                      <ArrowUpRight size={12} />
+                      <span className="font-medium">{item.trend}</span>
+                    </div>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                      item.platform === 'TikTok' ? 'bg-pink-500/10 text-pink-400' :
+                      item.platform === 'Reddit' ? 'bg-orange-500/10 text-orange-400' :
+                      item.platform === 'Twitter' ? 'bg-blue-500/10 text-blue-400' :
+                      'bg-emerald-500/10 text-emerald-400'
+                    }`}>{item.platform}</span>
+                  </div>
+                  {item.bsr && (
+                    <div className="flex items-center gap-1 mt-2 text-[10px] text-zinc-500">
+                      <BarChart3 size={10} />
+                      <span>Potential: {item.bsr < 500 ? 'High' : item.bsr < 1000 ? 'Medium' : 'Good'}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!trendsLoading && !trendsError && liveTrends.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-zinc-500 text-sm mb-2">No trends available</p>
+            <button
+              onClick={() => refreshMutation.mutate()}
+              className="text-emerald-400 text-sm hover:underline"
+            >
+              Fetch live trends
+            </button>
+          </div>
+        )}
+
+        {/* Last updated info */}
+        {trendsData?.data?.fetched_at && (
+          <div className="mt-3 pt-3 border-t border-zinc-800 flex items-center justify-between text-xs text-zinc-600">
+            <span>Data from: Google Trends, Reddit Public API</span>
+            <span>Updated: {new Date(trendsData.data.fetched_at).toLocaleTimeString()}</span>
+          </div>
+        )}
       </div>
 
       {/* Header */}

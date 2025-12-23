@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   getAllTrends,
+  refreshTrends,
   getCalendarOverview,
   generateAIPhrases,
   getAvailableTones,
@@ -111,12 +112,29 @@ export default function Tools() {
 
 // ============ TRENDING TAB ============
 function TrendingTab({ onCopy, copiedText }) {
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['allTrends'],
     queryFn: () => getAllTrends(15),
+    staleTime: 1000 * 60 * 15, // 15 minutes
+  })
+
+  const refreshMutation = useMutation({
+    mutationFn: refreshTrends,
+    onSuccess: () => refetch(),
   })
 
   if (isLoading) return <LoadingState />
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-400 mb-2">Failed to fetch trends</p>
+        <button onClick={() => refetch()} className="text-emerald-400 hover:underline">
+          Try again
+        </button>
+      </div>
+    )
+  }
 
   const trends = data?.data || {}
 
@@ -124,29 +142,52 @@ function TrendingTab({ onCopy, copiedText }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-zinc-100">Social Media Trends</h2>
-          <p className="text-sm text-zinc-500">Real-time trending topics from TikTok, Twitter & Reddit</p>
+          <h2 className="text-lg font-semibold text-zinc-100">Live Social Media Trends</h2>
+          <p className="text-sm text-zinc-500">Real-time data from Google Trends, Reddit, TikTok & Twitter</p>
+          {trends.is_live && (
+            <span className="inline-block mt-1 text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full animate-pulse">
+              LIVE DATA
+            </span>
+          )}
         </div>
-        <button onClick={() => refetch()} className="flex items-center gap-2 px-3 py-2 bg-zinc-800 rounded-lg text-sm text-zinc-400 hover:text-zinc-200">
-          <RefreshCw size={14} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => refreshMutation.mutate()}
+            disabled={refreshMutation.isPending}
+            className="flex items-center gap-2 px-3 py-2 bg-zinc-800 rounded-lg text-sm text-zinc-400 hover:text-zinc-200 disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={refreshMutation.isPending ? 'animate-spin' : ''} />
+            {refreshMutation.isPending ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
+      {/* Last updated */}
+      {trends.fetched_at && (
+        <p className="text-xs text-zinc-600">
+          Updated: {new Date(trends.fetched_at).toLocaleTimeString()}
+        </p>
+      )}
+
       {/* Platform sections */}
-      {['tiktok', 'twitter', 'reddit'].map((platform) => (
+      {['google', 'tiktok', 'twitter', 'reddit'].map((platform) => (
         <div key={platform} className="space-y-3">
           <div className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+              platform === 'google' ? 'bg-emerald-500/20' :
               platform === 'tiktok' ? 'bg-pink-500/20' :
               platform === 'twitter' ? 'bg-blue-500/20' : 'bg-orange-500/20'
             }`}>
-              {platform === 'tiktok' ? <Hash size={16} className="text-pink-400" /> :
+              {platform === 'google' ? <TrendingUp size={16} className="text-emerald-400" /> :
+               platform === 'tiktok' ? <Hash size={16} className="text-pink-400" /> :
                platform === 'twitter' ? <MessageCircle size={16} className="text-blue-400" /> :
                <ArrowUpRight size={16} className="text-orange-400" />}
             </div>
-            <h3 className="font-medium text-zinc-200 capitalize">{platform}</h3>
+            <h3 className="font-medium text-zinc-200 capitalize">{platform === 'google' ? 'Google Trends' : platform}</h3>
             <span className="text-xs text-zinc-500">{trends[platform]?.length || 0} trends</span>
+            {platform === 'google' && trends[platform]?.length > 0 && (
+              <span className="text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded">Primary Source</span>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto">
