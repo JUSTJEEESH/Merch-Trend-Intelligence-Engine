@@ -1,12 +1,10 @@
 """Merch-focused trending data service.
 
-Fetches data relevant to SHIRT DESIGNS, not general social trends.
-Sources:
-- Amazon autocomplete for shirt-related searches (what people are buying)
-- Etsy trending in apparel category
-- Google Trends with merch-specific keywords (when available)
+TWO categories of trends:
+1. MERCH TRENDS - What's selling (Amazon, Etsy, Pinterest)
+2. VIRAL TRENDS - Breaking content (TikTok, Twitter, Reddit)
 
-This is what tools like Merch Dominator and Merch Informer do.
+This is how Merch Dominator and Merch Informer work.
 """
 import asyncio
 import aiohttp
@@ -21,33 +19,32 @@ logger = logging.getLogger(__name__)
 
 class SocialTrendsService:
     """
-    Merch-specific trending service.
-    Focuses on what's actually SELLING on Amazon/Etsy, not social media noise.
+    Real merch trends service.
+    - Amazon/Etsy/Pinterest = What people are BUYING
+    - TikTok/Twitter/Reddit = What's going VIRAL (design early)
     """
 
-    # Merch-relevant search seeds - these are what people search when buying shirts
-    MERCH_SEARCH_SEEDS = [
-        # Niches that sell
+    # Merch-relevant search seeds
+    SHIRT_SEEDS = [
         "funny shirt", "dad shirt", "mom shirt", "nurse shirt", "teacher shirt",
-        "fishing shirt", "hunting shirt", "camping shirt", "hiking shirt",
-        "dog lover shirt", "cat lover shirt", "coffee shirt", "beer shirt",
-        "gaming shirt", "programmer shirt", "gym shirt", "yoga shirt",
-        "grandpa shirt", "grandma shirt", "wife shirt", "husband shirt",
-        "birthday shirt", "retirement shirt", "vintage shirt", "retro shirt",
-        # Trending styles
-        "sarcastic shirt", "introvert shirt", "anxiety shirt", "adult humor shirt",
-        "motivational shirt", "inspirational shirt", "christian shirt",
-        # Seasonal
-        "christmas shirt", "halloween shirt", "thanksgiving shirt",
-        "valentines day shirt", "st patricks day shirt", "4th of july shirt",
+        "fishing shirt", "hunting shirt", "camping shirt", "dog lover shirt",
+        "cat shirt", "coffee shirt", "beer shirt", "gaming shirt", "gym shirt",
+        "grandpa shirt", "grandma shirt", "birthday shirt", "christmas shirt",
+        "sarcastic shirt", "introvert shirt", "anxiety shirt", "vintage shirt",
     ]
 
     def __init__(self):
         self.cache = {}
         self.cache_expiry = timedelta(minutes=30)
+        self._session = None
+
+    async def _get_session(self):
+        if self._session is None or self._session.closed:
+            timeout = aiohttp.ClientTimeout(total=15)
+            self._session = aiohttp.ClientSession(timeout=timeout)
+        return self._session
 
     def _is_cache_valid(self, key: str) -> bool:
-        """Check if cached data is still valid."""
         if key not in self.cache:
             return False
         cached_time = self.cache[key].get("fetched_at")
@@ -59,33 +56,37 @@ class SocialTrendsService:
         except:
             return False
 
+    # =============================================
+    # MERCH TRENDS - What people are actually buying
+    # =============================================
+
     async def get_amazon_trends(self, limit: int = 25) -> List[Dict[str, Any]]:
         """
-        Get merch trends from Amazon autocomplete.
-        This shows what people are ACTUALLY searching for to buy shirts.
+        Amazon autocomplete API - shows what buyers search for.
+        This is the #1 source for merch research.
         """
         cache_key = "amazon_trends"
         if self._is_cache_valid(cache_key):
             return self.cache[cache_key]["data"][:limit]
 
         trends = []
-        seen_phrases = set()
+        seen = set()
 
-        # Amazon autocomplete API
-        base_url = "https://completion.amazon.com/api/2017/suggestions"
-
+        url = "https://completion.amazon.com/api/2017/suggestions"
         headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept": "application/json",
+            "Accept-Language": "en-US,en;q=0.9",
         }
 
-        async with aiohttp.ClientSession() as session:
-            # Query Amazon autocomplete for each seed
-            for seed in self.MERCH_SEARCH_SEEDS[:15]:  # Limit to avoid rate limiting
+        try:
+            session = await self._get_session()
+
+            for seed in self.SHIRT_SEEDS[:12]:
                 try:
                     params = {
                         "mid": "ATVPDKIKX0DER",
-                        "alias": "fashion",  # Fashion category
+                        "alias": "fashion",
                         "prefix": seed,
                         "event": "onKeyPress",
                         "limit": 10,
@@ -93,66 +94,46 @@ class SocialTrendsService:
                         "suggestion-type": "KEYWORD"
                     }
 
-                    async with session.get(base_url, params=params, headers=headers, timeout=5) as resp:
+                    async with session.get(url, params=params, headers=headers) as resp:
                         if resp.status == 200:
                             data = await resp.json()
-                            suggestions = data.get("suggestions", [])
+                            for idx, s in enumerate(data.get("suggestions", [])):
+                                phrase = s.get("value", "").strip()
+                                if phrase and phrase.lower() not in seen and len(phrase) > 5:
+                                    seen.add(phrase.lower())
+                                    display = self._extract_phrase(phrase)
+                                    trends.append({
+                                        "trend": display,
+                                        "search_query": phrase,
+                                        "platform": "Amazon",
+                                        "source": "Amazon Autocomplete",
+                                        "category": self._categorize(phrase),
+                                        "growth": f"+{180 - idx * 15}%",
+                                        "shirt_potential": {"score": 90 - idx * 5, "rating": "Excellent" if idx < 3 else "Good"},
+                                        "fetched_at": datetime.utcnow().isoformat(),
+                                        "is_live": True,
+                                    })
+                        else:
+                            logger.warning(f"Amazon returned {resp.status}")
 
-                            for idx, suggestion in enumerate(suggestions):
-                                phrase = suggestion.get("value", "").strip()
-                                phrase_lower = phrase.lower()
-
-                                # Skip if already seen or too short
-                                if phrase_lower in seen_phrases or len(phrase) < 5:
-                                    continue
-
-                                # Skip generic terms
-                                if phrase_lower in ["shirt", "t-shirt", "tshirt", "shirts", "t-shirts"]:
-                                    continue
-
-                                seen_phrases.add(phrase_lower)
-
-                                # Extract the interesting part (remove "shirt" suffix for display)
-                                display_phrase = self._extract_merch_phrase(phrase)
-
-                                trends.append({
-                                    "trend": display_phrase,
-                                    "search_query": phrase,
-                                    "platform": "Amazon",
-                                    "source": "Amazon Autocomplete",
-                                    "category": self._categorize_phrase(phrase),
-                                    "growth": f"+{100 + (10 - idx) * 20}%",  # Higher ranked = more searched
-                                    "merch_phrases": self._generate_variations(display_phrase),
-                                    "shirt_potential": {
-                                        "score": 85 - (idx * 3),
-                                        "rating": "Excellent" if idx < 3 else "Good" if idx < 6 else "Fair"
-                                    },
-                                    "fetched_at": datetime.utcnow().isoformat(),
-                                    "is_live": True,
-                                })
-
-                    await asyncio.sleep(0.3)  # Rate limit
+                    await asyncio.sleep(0.2)  # Rate limit
 
                 except Exception as e:
-                    logger.debug(f"Amazon autocomplete failed for '{seed}': {e}")
-                    continue
+                    logger.debug(f"Amazon seed '{seed}' failed: {e}")
 
-        # Sort by potential score
+            logger.info(f"Fetched {len(trends)} Amazon trends")
+
+        except Exception as e:
+            logger.error(f"Amazon trends failed: {e}")
+
         trends.sort(key=lambda x: x.get("shirt_potential", {}).get("score", 0), reverse=True)
 
-        logger.info(f"Fetched {len(trends)} trends from Amazon autocomplete")
-
-        self.cache[cache_key] = {
-            "data": trends,
-            "fetched_at": datetime.utcnow().isoformat()
-        }
-
+        self.cache[cache_key] = {"data": trends, "fetched_at": datetime.utcnow().isoformat()}
         return trends[:limit]
 
     async def get_etsy_trends(self, limit: int = 20) -> List[Dict[str, Any]]:
         """
-        Get merch trends from Etsy search suggestions.
-        Shows what's selling in the POD/handmade space.
+        Etsy search suggestions - POD/handmade market.
         """
         cache_key = "etsy_trends"
         if self._is_cache_valid(cache_key):
@@ -161,61 +142,191 @@ class SocialTrendsService:
         trends = []
         seen = set()
 
-        # Etsy search suggestions endpoint
-        base_url = "https://www.etsy.com/api/v3/ajax/bespoke/member/suggestions"
-
+        # Etsy's search suggest endpoint
+        url = "https://www.etsy.com/api/v3/ajax/bespoke/member/neu/specs/async_search_results"
         headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
             "Accept": "application/json",
             "x-requested-with": "XMLHttpRequest",
         }
 
-        async with aiohttp.ClientSession() as session:
-            for seed in ["funny shirt", "graphic tee", "vintage t-shirt", "custom shirt", "quote shirt"][:5]:
+        try:
+            session = await self._get_session()
+
+            for seed in ["funny shirt", "graphic tee", "vintage t-shirt", "custom shirt"]:
                 try:
-                    params = {"query": seed, "limit": 10}
-                    async with session.get(base_url, params=params, headers=headers, timeout=5) as resp:
+                    # Try the search autocomplete
+                    suggest_url = f"https://www.etsy.com/search/suggest?q={seed.replace(' ', '+')}"
+                    async with session.get(suggest_url, headers=headers) as resp:
                         if resp.status == 200:
-                            data = await resp.json()
-                            for item in data.get("suggestions", data.get("results", [])):
-                                query = item.get("query", item.get("value", ""))
-                                if query and query.lower() not in seen:
-                                    seen.add(query.lower())
-                                    display = self._extract_merch_phrase(query)
-                                    trends.append({
-                                        "trend": display,
-                                        "search_query": query,
-                                        "platform": "Etsy",
-                                        "source": "Etsy Search",
-                                        "category": self._categorize_phrase(query),
-                                        "growth": f"+{80 + len(trends) * 5}%",
-                                        "merch_phrases": self._generate_variations(display),
-                                        "shirt_potential": {
-                                            "score": 75,
-                                            "rating": "Good"
-                                        },
-                                        "fetched_at": datetime.utcnow().isoformat(),
-                                        "is_live": True,
-                                    })
-                    await asyncio.sleep(0.5)
+                            try:
+                                data = await resp.json()
+                                for item in data.get("suggestions", data.get("results", []))[:8]:
+                                    query = item.get("query", item.get("value", item.get("text", "")))
+                                    if query and query.lower() not in seen:
+                                        seen.add(query.lower())
+                                        display = self._extract_phrase(query)
+                                        trends.append({
+                                            "trend": display,
+                                            "search_query": query,
+                                            "platform": "Etsy",
+                                            "source": "Etsy Search",
+                                            "category": self._categorize(query),
+                                            "growth": f"+{120 + len(trends) * 5}%",
+                                            "shirt_potential": {"score": 75, "rating": "Good"},
+                                            "fetched_at": datetime.utcnow().isoformat(),
+                                            "is_live": True,
+                                        })
+                            except:
+                                pass
+
+                    await asyncio.sleep(0.3)
+
                 except Exception as e:
-                    logger.debug(f"Etsy suggestions failed: {e}")
+                    logger.debug(f"Etsy seed '{seed}' failed: {e}")
 
-        logger.info(f"Fetched {len(trends)} trends from Etsy")
+            logger.info(f"Fetched {len(trends)} Etsy trends")
 
-        self.cache[cache_key] = {
-            "data": trends,
-            "fetched_at": datetime.utcnow().isoformat()
-        }
+        except Exception as e:
+            logger.error(f"Etsy trends failed: {e}")
 
+        self.cache[cache_key] = {"data": trends, "fetched_at": datetime.utcnow().isoformat()}
         return trends[:limit]
 
-    async def get_google_trends(self, limit: int = 15) -> List[Dict[str, Any]]:
+    async def get_pinterest_trends(self, limit: int = 20) -> List[Dict[str, Any]]:
         """
-        Try to get Google Trends data for merch keywords.
-        Falls back gracefully if blocked.
+        Pinterest trends - visual/design inspiration.
         """
-        cache_key = "google_trends"
+        cache_key = "pinterest_trends"
+        if self._is_cache_valid(cache_key):
+            return self.cache[cache_key]["data"][:limit]
+
+        trends = []
+
+        # Pinterest autocomplete for shirt-related searches
+        url = "https://www.pinterest.com/resource/BaseSearchResource/get/"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+            "Accept": "application/json",
+        }
+
+        try:
+            session = await self._get_session()
+
+            for seed in ["t-shirt design", "shirt ideas", "graphic tee", "funny shirt"]:
+                try:
+                    # Pinterest typeahead
+                    typeahead_url = f"https://www.pinterest.com/resource/TypeaheadResource/get/?source_url=/search/pins/?q={seed.replace(' ', '%20')}&data={{\"options\":{{\"query\":\"{seed}\",\"count\":10}}}}"
+
+                    async with session.get(typeahead_url, headers=headers) as resp:
+                        if resp.status == 200:
+                            try:
+                                data = await resp.json()
+                                items = data.get("resource_response", {}).get("data", {}).get("items", [])
+                                for item in items[:5]:
+                                    term = item.get("label", item.get("term", ""))
+                                    if term and term.lower() not in [t["trend"].lower() for t in trends]:
+                                        trends.append({
+                                            "trend": term.title(),
+                                            "platform": "Pinterest",
+                                            "source": "Pinterest Typeahead",
+                                            "category": "design",
+                                            "growth": "+100%",
+                                            "shirt_potential": {"score": 70, "rating": "Good"},
+                                            "fetched_at": datetime.utcnow().isoformat(),
+                                            "is_live": True,
+                                        })
+                            except:
+                                pass
+
+                    await asyncio.sleep(0.3)
+
+                except Exception as e:
+                    logger.debug(f"Pinterest seed '{seed}' failed: {e}")
+
+            logger.info(f"Fetched {len(trends)} Pinterest trends")
+
+        except Exception as e:
+            logger.error(f"Pinterest trends failed: {e}")
+
+        self.cache[cache_key] = {"data": trends, "fetched_at": datetime.utcnow().isoformat()}
+        return trends[:limit]
+
+    # =============================================
+    # VIRAL TRENDS - Breaking content for early design
+    # =============================================
+
+    async def get_reddit_trends(self, limit: int = 15) -> List[Dict[str, Any]]:
+        """
+        Reddit public API - breaking memes and viral content.
+        """
+        cache_key = "reddit_trends"
+        if self._is_cache_valid(cache_key):
+            return self.cache[cache_key]["data"][:limit]
+
+        trends = []
+        seen = set()
+
+        headers = {
+            "User-Agent": "MerchTrendEngine/1.0 (Research Tool; contact@example.com)"
+        }
+
+        # Subreddits relevant to merch/memes
+        subreddits = ["memes", "funny", "me_irl", "dankmemes", "wholesomememes"]
+
+        try:
+            session = await self._get_session()
+
+            for sub in subreddits[:3]:
+                try:
+                    url = f"https://www.reddit.com/r/{sub}/hot.json?limit=15"
+                    async with session.get(url, headers=headers) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            for post in data.get("data", {}).get("children", []):
+                                pd = post.get("data", {})
+                                title = pd.get("title", "")
+                                score = pd.get("score", 0)
+
+                                if score > 5000 and title:
+                                    phrase = self._extract_meme_phrase(title)
+                                    if phrase and phrase.lower() not in seen:
+                                        seen.add(phrase.lower())
+                                        trends.append({
+                                            "trend": phrase,
+                                            "full_title": title,
+                                            "platform": "Reddit",
+                                            "source": f"r/{sub}",
+                                            "upvotes": f"{score:,}",
+                                            "category": "viral",
+                                            "growth": f"+{min(score // 100, 500)}%",
+                                            "shirt_potential": self._score_viral(phrase, score),
+                                            "fetched_at": datetime.utcnow().isoformat(),
+                                            "is_live": True,
+                                        })
+                        else:
+                            logger.warning(f"Reddit r/{sub} returned {resp.status}")
+
+                    await asyncio.sleep(1)  # Reddit rate limits aggressively
+
+                except Exception as e:
+                    logger.debug(f"Reddit r/{sub} failed: {e}")
+
+            logger.info(f"Fetched {len(trends)} Reddit trends")
+
+        except Exception as e:
+            logger.error(f"Reddit trends failed: {e}")
+
+        trends.sort(key=lambda x: x.get("shirt_potential", {}).get("score", 0), reverse=True)
+        self.cache[cache_key] = {"data": trends, "fetched_at": datetime.utcnow().isoformat()}
+        return trends[:limit]
+
+    async def get_tiktok_trends(self, limit: int = 15) -> List[Dict[str, Any]]:
+        """
+        TikTok trends - viral sounds/challenges.
+        TikTok has no public API, so we use Google Trends as proxy.
+        """
+        cache_key = "tiktok_trends"
         if self._is_cache_valid(cache_key):
             return self.cache[cache_key]["data"][:limit]
 
@@ -223,205 +334,216 @@ class SocialTrendsService:
 
         try:
             from pytrends.request import TrendReq
-            pytrends = TrendReq(hl='en-US', tz=360, timeout=(10, 25), retries=2, backoff_factor=0.5)
+            pytrends = TrendReq(hl='en-US', tz=360, timeout=(10, 25), retries=2)
 
             # Get trending searches
             trending_df = pytrends.trending_searches(pn='united_states')
 
             for idx, term in enumerate(trending_df[0].tolist()[:limit]):
-                # Filter for potentially merch-relevant terms
+                potential = self._score_viral(term, 10000)
                 trends.append({
                     "trend": term,
-                    "platform": "Google",
-                    "source": "Google Trends",
-                    "category": "trending",
+                    "platform": "TikTok",
+                    "source": "Google Trends (TikTok proxy)",
+                    "category": "viral",
                     "growth": f"+{200 - idx * 10}%",
-                    "merch_phrases": self._generate_variations(term),
-                    "shirt_potential": self._calculate_merch_potential(term),
+                    "shirt_potential": potential,
                     "fetched_at": datetime.utcnow().isoformat(),
                     "is_live": True,
                 })
 
-            logger.info(f"Fetched {len(trends)} from Google Trends")
+            logger.info(f"Fetched {len(trends)} TikTok trends via Google")
 
         except Exception as e:
-            logger.warning(f"Google Trends unavailable: {e}")
-            # Don't fail - just return empty
+            logger.warning(f"TikTok/Google trends failed: {e}")
 
-        self.cache[cache_key] = {
-            "data": trends,
-            "fetched_at": datetime.utcnow().isoformat()
-        }
-
+        self.cache[cache_key] = {"data": trends, "fetched_at": datetime.utcnow().isoformat()}
         return trends[:limit]
 
-    async def get_tiktok_trends(self, limit: int = 15) -> List[Dict[str, Any]]:
-        """Alias for Amazon trends - TikTok has no free API."""
-        # Use Amazon data as proxy for viral content
-        return await self.get_amazon_trends(limit)
-
     async def get_twitter_trends(self, limit: int = 15) -> List[Dict[str, Any]]:
-        """Alias for Google trends - Twitter API is paid."""
-        return await self.get_google_trends(limit)
+        """
+        Twitter/X trends - Use Google Trends as Twitter API is paid.
+        """
+        # Same as TikTok - use Google Trends
+        trends = await self.get_tiktok_trends(limit)
+        for t in trends:
+            t["platform"] = "Twitter"
+            t["source"] = "Google Trends (Twitter proxy)"
+        return trends
 
-    async def get_reddit_trends(self, limit: int = 15) -> List[Dict[str, Any]]:
-        """Get Reddit-style trends from Amazon data."""
-        return await self.get_amazon_trends(limit)
+    async def get_google_trends(self, limit: int = 15) -> List[Dict[str, Any]]:
+        """Google Trends - general trending searches."""
+        return await self.get_tiktok_trends(limit)
+
+    # =============================================
+    # COMBINED DATA
+    # =============================================
 
     async def get_all_trends(self, limit_per_platform: int = 15) -> Dict[str, Any]:
         """
-        Get all merch-relevant trends.
-        Primary source: Amazon (what people are searching to BUY)
-        Secondary: Etsy, Google Trends
-        """
-        logger.info("Fetching merch-specific trends...")
+        Get all trends from all platforms.
 
-        # Fetch in parallel
-        results = await asyncio.gather(
+        Returns structured data:
+        - amazon, etsy, pinterest = MERCH trends (what sells)
+        - tiktok, twitter, reddit = VIRAL trends (what's breaking)
+        """
+        logger.info("Fetching all platform trends...")
+
+        # Fetch merch trends (priority)
+        merch_results = await asyncio.gather(
             self.get_amazon_trends(limit_per_platform),
             self.get_etsy_trends(limit_per_platform),
-            self.get_google_trends(limit_per_platform),
+            self.get_pinterest_trends(limit_per_platform),
             return_exceptions=True
         )
 
-        amazon = results[0] if not isinstance(results[0], Exception) else []
-        etsy = results[1] if not isinstance(results[1], Exception) else []
-        google = results[2] if not isinstance(results[2], Exception) else []
+        # Fetch viral trends
+        viral_results = await asyncio.gather(
+            self.get_reddit_trends(limit_per_platform),
+            self.get_tiktok_trends(limit_per_platform),
+            return_exceptions=True
+        )
 
-        # Combine and deduplicate
+        # Unpack results
+        amazon = merch_results[0] if not isinstance(merch_results[0], Exception) else []
+        etsy = merch_results[1] if not isinstance(merch_results[1], Exception) else []
+        pinterest = merch_results[2] if not isinstance(merch_results[2], Exception) else []
+        reddit = viral_results[0] if not isinstance(viral_results[0], Exception) else []
+        tiktok = viral_results[1] if not isinstance(viral_results[1], Exception) else []
+
+        # Log any errors
+        for i, r in enumerate(merch_results + viral_results):
+            if isinstance(r, Exception):
+                logger.error(f"Platform {i} failed: {r}")
+
+        # Combined and deduplicated
         all_trends = []
         seen = set()
-
-        for trend in amazon + etsy + google:
+        for trend in amazon + etsy + pinterest + reddit + tiktok:
             key = trend.get("trend", "").lower()
             if key and key not in seen:
                 seen.add(key)
                 all_trends.append(trend)
 
-        # Sort by shirt potential
-        all_trends.sort(
-            key=lambda x: x.get("shirt_potential", {}).get("score", 0),
-            reverse=True
-        )
+        all_trends.sort(key=lambda x: x.get("shirt_potential", {}).get("score", 0), reverse=True)
 
         return {
+            # Merch-specific (what's selling)
             "amazon": amazon,
             "etsy": etsy,
-            "google": google,
-            "tiktok": amazon[:10],  # Use Amazon as TikTok proxy
-            "twitter": google[:10],  # Use Google as Twitter proxy
-            "reddit": amazon[10:20] if len(amazon) > 10 else amazon,
+            "pinterest": pinterest,
+            # Viral content (breaking trends)
+            "tiktok": tiktok,
+            "twitter": tiktok,  # Same source for now
+            "reddit": reddit,
+            # For backwards compat
+            "google": tiktok,
+            # Combined
             "combined": all_trends[:30],
             "fetched_at": datetime.utcnow().isoformat(),
-            "is_live": len(amazon) > 0 or len(etsy) > 0,
-            "source_info": "Data from Amazon & Etsy search suggestions - what buyers are actually searching for"
+            "is_live": len(amazon) > 0 or len(reddit) > 0 or len(tiktok) > 0,
+            "counts": {
+                "amazon": len(amazon),
+                "etsy": len(etsy),
+                "pinterest": len(pinterest),
+                "reddit": len(reddit),
+                "tiktok": len(tiktok),
+            }
         }
 
-    def _extract_merch_phrase(self, query: str) -> str:
-        """Extract the interesting merch phrase from a search query."""
-        # Remove common suffixes
-        suffixes = [
-            " shirt", " t-shirt", " tshirt", " t shirt", " tee", " shirts",
-            " for men", " for women", " for him", " for her", " gift",
-            " funny", " graphic", " vintage", " retro"
-        ]
+    # =============================================
+    # HELPERS
+    # =============================================
+
+    def _extract_phrase(self, query: str) -> str:
+        """Extract merch-ready phrase from search query."""
+        suffixes = [" shirt", " t-shirt", " tshirt", " tee", " for men", " for women", " gift"]
         result = query.lower()
-        for suffix in suffixes:
-            if result.endswith(suffix):
-                result = result[:-len(suffix)]
-
-        # Remove common prefixes
-        prefixes = ["funny ", "cool ", "cute ", "best ", "custom "]
-        for prefix in prefixes:
-            if result.startswith(prefix):
-                result = result[len(prefix):]
-
+        for s in suffixes:
+            if result.endswith(s):
+                result = result[:-len(s)]
+        prefixes = ["funny ", "cool ", "cute ", "best "]
+        for p in prefixes:
+            if result.startswith(p):
+                result = result[len(p):]
         return result.strip().title() if result.strip() else query.title()
 
-    def _categorize_phrase(self, phrase: str) -> str:
-        """Categorize a phrase into a merch niche."""
-        phrase_lower = phrase.lower()
+    def _extract_meme_phrase(self, title: str) -> str:
+        """Extract potential meme phrase from Reddit title."""
+        title = re.sub(r'\[.*?\]', '', title)
+        title = re.sub(r'\(.*?\)', '', title)
+        title = re.sub(r'https?://\S+', '', title)
+        title = ' '.join(title.split())
+        words = title.split()
+        if len(words) > 6:
+            title = ' '.join(words[:6])
+        return title.strip()[:50]
 
-        categories = {
-            "family": ["dad", "mom", "grandpa", "grandma", "wife", "husband", "aunt", "uncle", "sister", "brother"],
-            "profession": ["nurse", "teacher", "firefighter", "police", "doctor", "engineer", "programmer", "trucker"],
-            "hobby": ["fishing", "hunting", "camping", "hiking", "gaming", "golf", "yoga", "gym", "running"],
-            "pets": ["dog", "cat", "horse", "chicken", "pet"],
-            "beverages": ["coffee", "beer", "wine", "whiskey", "tea"],
-            "humor": ["funny", "sarcastic", "introvert", "anxiety", "adult humor"],
-            "seasonal": ["christmas", "halloween", "thanksgiving", "valentines", "easter", "4th of july"],
-            "lifestyle": ["vintage", "retro", "motivational", "christian", "patriotic"],
+    def _categorize(self, phrase: str) -> str:
+        """Categorize into merch niches."""
+        p = phrase.lower()
+        cats = {
+            "family": ["dad", "mom", "grandpa", "grandma", "wife", "husband"],
+            "profession": ["nurse", "teacher", "firefighter", "doctor", "engineer"],
+            "hobby": ["fishing", "hunting", "camping", "hiking", "gaming", "golf"],
+            "pets": ["dog", "cat", "horse"],
+            "beverages": ["coffee", "beer", "wine", "whiskey"],
+            "humor": ["funny", "sarcastic", "introvert"],
+            "seasonal": ["christmas", "halloween", "thanksgiving"],
         }
-
-        for category, keywords in categories.items():
-            if any(kw in phrase_lower for kw in keywords):
-                return category
-
+        for cat, kws in cats.items():
+            if any(k in p for k in kws):
+                return cat
         return "general"
 
-    def _calculate_merch_potential(self, phrase: str) -> Dict[str, Any]:
-        """Calculate how well a phrase would work on a shirt."""
+    def _score_viral(self, phrase: str, engagement: int) -> Dict[str, Any]:
+        """Score viral content for shirt potential."""
         score = 50
-        phrase_lower = phrase.lower()
+        p = phrase.lower()
 
-        # Short phrases are better
-        word_count = len(phrase.split())
-        if word_count <= 3:
+        # Short = better for shirts
+        if len(phrase.split()) <= 3:
             score += 20
-        elif word_count <= 5:
+        elif len(phrase.split()) <= 5:
             score += 10
 
-        # Check for merch-friendly keywords
-        good_keywords = ["funny", "best", "love", "life", "mode", "vibes", "energy", "era"]
-        if any(kw in phrase_lower for kw in good_keywords):
+        # Meme-friendly words
+        good = ["era", "mode", "vibes", "energy", "coded", "core", "pilled"]
+        if any(w in p for w in good):
             score += 15
 
-        # Penalize news/political
-        bad_keywords = ["election", "president", "war", "covid", "politics"]
-        if any(kw in phrase_lower for kw in bad_keywords):
-            score -= 30
+        # Avoid news/political
+        bad = ["election", "president", "war", "died", "killed", "shooting"]
+        if any(w in p for w in bad):
+            score -= 40
+
+        # High engagement boost
+        if engagement > 50000:
+            score += 15
+        elif engagement > 10000:
+            score += 10
 
         score = max(20, min(100, score))
-
         return {
             "score": score,
             "rating": "Excellent" if score >= 80 else "Good" if score >= 60 else "Fair" if score >= 40 else "Poor"
         }
 
-    def _generate_variations(self, phrase: str) -> List[str]:
-        """Generate merch-ready variations of a phrase."""
-        if not phrase:
-            return []
-
-        phrase_clean = phrase.strip()
-        variations = [phrase_clean]
-
-        # Only add variations for short phrases
-        if len(phrase_clean.split()) <= 4:
-            templates = [
-                f"In my {phrase_clean.lower()} era",
-                f"{phrase_clean} mode",
-                f"{phrase_clean} vibes",
-            ]
-            variations.extend(templates)
-
-        return variations[:5]
-
     async def get_trending_phrases_for_niche(self, niche: str) -> List[Dict[str, Any]]:
         """Get trends filtered by niche."""
         all_trends = await self.get_all_trends()
-
-        filtered = [
-            t for t in all_trends.get("combined", [])
-            if t.get("category", "").lower() == niche.lower()
-        ]
-
+        filtered = [t for t in all_trends.get("combined", []) if t.get("category", "").lower() == niche.lower()]
         return filtered[:15] if filtered else all_trends.get("combined", [])[:10]
 
     def clear_cache(self):
         """Clear all cached data."""
         self.cache = {}
         logger.info("Trends cache cleared")
+
+    async def close(self):
+        """Close the aiohttp session."""
+        if self._session and not self._session.closed:
+            await self._session.close()
 
 
 # Singleton

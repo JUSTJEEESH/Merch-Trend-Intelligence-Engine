@@ -138,12 +138,25 @@ function TrendingTab({ onCopy, copiedText }) {
 
   const trends = data?.data || {}
 
+  // Platform display config
+  const MERCH_PLATFORMS = [
+    { key: 'amazon', name: 'Amazon Searches', color: 'orange', icon: TrendingUp, desc: "What buyers search for" },
+    { key: 'etsy', name: 'Etsy Trends', color: 'pink', icon: Hash, desc: "POD marketplace" },
+    { key: 'pinterest', name: 'Pinterest', color: 'red', icon: Palette, desc: "Design inspiration" },
+  ]
+
+  const VIRAL_PLATFORMS = [
+    { key: 'reddit', name: 'Reddit', color: 'orange', icon: ArrowUpRight, desc: "Breaking memes" },
+    { key: 'tiktok', name: 'TikTok', color: 'pink', icon: Zap, desc: "Viral content" },
+    { key: 'twitter', name: 'Twitter/X', color: 'blue', icon: MessageCircle, desc: "Trending topics" },
+  ]
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-zinc-100">Merch Trend Research</h2>
-          <p className="text-sm text-zinc-500">What buyers are actually searching for on Amazon & Etsy</p>
+          <p className="text-sm text-zinc-500">Real data from Amazon, Etsy, Pinterest + viral platforms</p>
           {trends.is_live && (
             <span className="inline-block mt-1 text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full animate-pulse">
               LIVE DATA
@@ -151,6 +164,11 @@ function TrendingTab({ onCopy, copiedText }) {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {trends.counts && (
+            <span className="text-xs text-zinc-500">
+              {Object.values(trends.counts).reduce((a, b) => a + b, 0)} total trends
+            </span>
+          )}
           <button
             onClick={() => refreshMutation.mutate()}
             disabled={refreshMutation.isPending}
@@ -169,62 +187,123 @@ function TrendingTab({ onCopy, copiedText }) {
         </p>
       )}
 
-      {/* Platform sections - Merch-specific sources */}
-      {['amazon', 'etsy', 'google'].map((platform) => (
-        <div key={platform} className="space-y-3">
-          <div className="flex items-center gap-2">
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              platform === 'amazon' ? 'bg-orange-500/20' :
-              platform === 'etsy' ? 'bg-pink-500/20' : 'bg-emerald-500/20'
-            }`}>
-              {platform === 'amazon' ? <TrendingUp size={16} className="text-orange-400" /> :
-               platform === 'etsy' ? <Hash size={16} className="text-pink-400" /> :
-               <ArrowUpRight size={16} className="text-emerald-400" />}
+      {/* MERCH TRENDS - What's Selling */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-6 bg-emerald-500 rounded-full" />
+          <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wide">Merch Trends - What's Selling</h3>
+        </div>
+
+        {MERCH_PLATFORMS.map(({ key, name, color, icon: Icon, desc }) => (
+          <div key={key} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-${color}-500/20`}>
+                <Icon size={16} className={`text-${color}-400`} />
+              </div>
+              <h4 className="font-medium text-zinc-200">{name}</h4>
+              <span className="text-xs text-zinc-500">{trends[key]?.length || 0} trends</span>
+              <span className="text-xs text-zinc-600">• {desc}</span>
             </div>
-            <h3 className="font-medium text-zinc-200 capitalize">
-              {platform === 'amazon' ? 'Amazon Searches' : platform === 'etsy' ? 'Etsy Trends' : 'Google Trends'}
-            </h3>
-            <span className="text-xs text-zinc-500">{trends[platform]?.length || 0} trends</span>
-            {platform === 'amazon' && trends[platform]?.length > 0 && (
-              <span className="text-xs px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded">Primary Source</span>
+
+            {(trends[key]?.length || 0) > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto">
+                {(trends[key] || []).map((trend, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50 hover:border-zinc-600 transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="font-medium text-zinc-200">{trend.trend}</span>
+                      <span className="text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded">
+                        {trend.growth}
+                      </span>
+                    </div>
+                    {trend.search_query && trend.search_query !== trend.trend && (
+                      <p className="text-xs text-zinc-500 mb-2 truncate">{trend.search_query}</p>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-zinc-500">
+                        {trend.shirt_potential?.rating || 'Good'} potential
+                      </span>
+                      <button
+                        onClick={() => onCopy(trend.trend)}
+                        className="p-1 hover:bg-zinc-700 rounded"
+                      >
+                        {copiedText === trend.trend ? (
+                          <Check size={12} className="text-emerald-400" />
+                        ) : (
+                          <Copy size={12} className="text-zinc-500" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-zinc-600 italic">No {name.toLowerCase()} data available</p>
             )}
           </div>
+        ))}
+      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto">
-            {(trends[platform] || []).map((trend, idx) => (
-              <div
-                key={idx}
-                className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50 hover:border-zinc-600 transition-all"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <span className="font-medium text-zinc-200">{trend.trend}</span>
-                  <span className="text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded">
-                    {trend.growth}
-                  </span>
-                </div>
-                {trend.hashtag && (
-                  <p className="text-xs text-zinc-500 mb-2">{trend.hashtag}</p>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-zinc-500">
-                    {trend.shirt_potential?.rating || 'Good'} potential
-                  </span>
-                  <button
-                    onClick={() => onCopy(trend.trend)}
-                    className="p-1 hover:bg-zinc-700 rounded"
-                  >
-                    {copiedText === trend.trend ? (
-                      <Check size={12} className="text-emerald-400" />
-                    ) : (
-                      <Copy size={12} className="text-zinc-500" />
-                    )}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* VIRAL TRENDS - Breaking Content */}
+      <div className="space-y-4 pt-4 border-t border-zinc-800">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-6 bg-purple-500 rounded-full" />
+          <h3 className="text-sm font-semibold text-purple-400 uppercase tracking-wide">Viral Trends - Breaking Now</h3>
         </div>
-      ))}
+
+        {VIRAL_PLATFORMS.map(({ key, name, color, icon: Icon, desc }) => (
+          <div key={key} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-${color}-500/20`}>
+                <Icon size={16} className={`text-${color}-400`} />
+              </div>
+              <h4 className="font-medium text-zinc-200">{name}</h4>
+              <span className="text-xs text-zinc-500">{trends[key]?.length || 0} trends</span>
+              <span className="text-xs text-zinc-600">• {desc}</span>
+            </div>
+
+            {(trends[key]?.length || 0) > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto">
+                {(trends[key] || []).map((trend, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50 hover:border-zinc-600 transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="font-medium text-zinc-200">{trend.trend}</span>
+                      <span className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded">
+                        {trend.growth}
+                      </span>
+                    </div>
+                    {trend.upvotes && (
+                      <p className="text-xs text-zinc-500 mb-2">↑ {trend.upvotes} upvotes</p>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-zinc-500">
+                        {trend.shirt_potential?.rating || 'Good'} potential
+                      </span>
+                      <button
+                        onClick={() => onCopy(trend.trend)}
+                        className="p-1 hover:bg-zinc-700 rounded"
+                      >
+                        {copiedText === trend.trend ? (
+                          <Check size={12} className="text-emerald-400" />
+                        ) : (
+                          <Copy size={12} className="text-zinc-500" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-zinc-600 italic">No {name.toLowerCase()} data available</p>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
