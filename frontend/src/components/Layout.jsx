@@ -5,10 +5,12 @@ import {
   FileText,
   TrendingUp,
   Zap,
+  Wrench,
 } from 'lucide-react'
 
 const navigation = [
   { name: 'Idea Generator', href: '/', icon: Sparkles, color: 'text-emerald-400' },
+  { name: 'Advanced Tools', href: '/tools', icon: Wrench, color: 'text-purple-400' },
   { name: 'Trademark Check', href: '/trademarks', icon: Shield, color: 'text-amber-400' },
   { name: 'SEO Builder', href: '/seo', icon: FileText, color: 'text-blue-400' },
 ]

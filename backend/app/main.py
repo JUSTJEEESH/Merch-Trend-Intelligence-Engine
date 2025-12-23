@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 from .config import settings
 from .database import init_db
-from .routes import phrases, patterns, trademarks, scraping, seo, export, dashboard, ideas
+from .routes import phrases, patterns, trademarks, scraping, seo, export, dashboard, ideas, tools
 
 
 @asynccontextmanager
@@ -45,6 +45,7 @@ app.include_router(scraping.router, prefix="/api/scrape", tags=["Scraping"])
 app.include_router(seo.router, prefix="/api/seo", tags=["SEO"])
 app.include_router(export.router, prefix="/api/export", tags=["Export"])
 app.include_router(ideas.router, prefix="/api/ideas", tags=["Ideas"])
+app.include_router(tools.router, tags=["Tools"])
 
 
 @app.get("/")

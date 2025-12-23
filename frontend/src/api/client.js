@@ -92,4 +92,78 @@ export const getAvailableNiches = () => client.get('/ideas/niches').then(res => 
 export const getTemplates = (limit = 50) => client.get(`/ideas/templates?limit=${limit}`).then(res => res.data)
 export const getTopics = () => client.get('/ideas/topics').then(res => res.data)
 
+// ============ ADVANCED TOOLS API ============
+
+// Social Trending
+export const getAllTrends = (limit = 15) =>
+  client.get(`/tools/trending/all?limit_per_platform=${limit}`).then(res => res.data)
+export const getTikTokTrends = (limit = 25) =>
+  client.get(`/tools/trending/tiktok?limit=${limit}`).then(res => res.data)
+export const getTwitterTrends = (limit = 20) =>
+  client.get(`/tools/trending/twitter?limit=${limit}`).then(res => res.data)
+export const getRedditTrends = (limit = 10) =>
+  client.get(`/tools/trending/reddit?limit=${limit}`).then(res => res.data)
+export const getTrendingForNiche = (niche) =>
+  client.get(`/tools/trending/niche/${niche}`).then(res => res.data)
+
+// Seasonal Calendar
+export const getUpcomingEvents = (days = 90) =>
+  client.get(`/tools/calendar/upcoming?days=${days}`).then(res => res.data)
+export const getCalendarOverview = () =>
+  client.get('/tools/calendar/overview').then(res => res.data)
+export const getEventsForNiche = (niche) =>
+  client.get(`/tools/calendar/niche/${niche}`).then(res => res.data)
+export const getEventPhrases = (eventName) =>
+  client.get(`/tools/calendar/event/${encodeURIComponent(eventName)}/phrases`).then(res => res.data)
+
+// AI Phrase Generator
+export const generateAIPhrases = (topic, tone = 'funny', count = 20) =>
+  client.post('/tools/ai/generate', { topic, tone, count }).then(res => res.data)
+export const generateBulkPhrases = (topic, countPerTone = 10) =>
+  client.post(`/tools/ai/generate-bulk?topic=${topic}&count_per_tone=${countPerTone}`).then(res => res.data)
+export const getAvailableTones = () =>
+  client.get('/tools/ai/tones').then(res => res.data)
+export const suggestTonesForTopic = (topic) =>
+  client.get(`/tools/ai/suggest-tones/${topic}`).then(res => res.data)
+
+// BSR Tracker
+export const estimateSalesFromBSR = (bsr) =>
+  client.get(`/tools/bsr/estimate/${bsr}`).then(res => res.data)
+export const getNicheBSRData = (niche) =>
+  client.get(`/tools/bsr/niche/${niche}`).then(res => res.data)
+export const getBSRHistory = (keyword, days = 30) =>
+  client.get(`/tools/bsr/history/${keyword}?days=${days}`).then(res => res.data)
+export const getBSROpportunities = () =>
+  client.get('/tools/bsr/opportunities').then(res => res.data)
+
+// Profitability Calculator
+export const calculateNicheProfitability = (niche) =>
+  client.get(`/tools/profitability/niche/${niche}`).then(res => res.data)
+export const getBestNiches = (count = 10) =>
+  client.get(`/tools/profitability/best-niches?count=${count}`).then(res => res.data)
+export const compareNiches = (niches) =>
+  client.post('/tools/profitability/compare', niches).then(res => res.data)
+export const calculateRevenueProjection = (monthlySales, product = 'standard_tee', months = 12) =>
+  client.get(`/tools/profitability/projection?monthly_sales=${monthlySales}&product=${product}&months=${months}`).then(res => res.data)
+export const calculateDesignROI = (data) =>
+  client.post('/tools/profitability/roi', data).then(res => res.data)
+export const calculatePortfolioMetrics = (designsCount, avgSales, product = 'standard_tee') =>
+  client.post('/tools/profitability/portfolio', { designs_count: designsCount, avg_sales_per_design: avgSales, product }).then(res => res.data)
+
+// Design Generator
+export const generateDesignConcept = (phrase, style = 'funny') =>
+  client.post('/tools/design/concept', { phrase, style }).then(res => res.data)
+export const getMultipleDesignConcepts = (phrase, count = 3) =>
+  client.get(`/tools/design/concepts/${encodeURIComponent(phrase)}?count=${count}`).then(res => res.data)
+export const getColorPalettesForNiche = (niche) =>
+  client.get(`/tools/design/colors/${niche}`).then(res => res.data)
+
+// Listing Optimizer
+export const generateOptimizedListing = (phrase, niche = 'general', product = 'T-Shirt', tone = 'funny') =>
+  client.post('/tools/listing/optimize', { phrase, niche, product, tone }).then(res => res.data)
+export const generateOptimizedTitle = (phrase, niche = 'general', product = 'T-Shirt', tone = 'funny') =>
+  client.post('/tools/listing/title', { phrase, niche, product, tone }).then(res => res.data)
+export const generateBackendKeywords = (phrase, niche = 'general') =>
+  client.post(`/tools/listing/keywords?phrase=${encodeURIComponent(phrase)}&niche=${niche}`).then(res => res.data)
+
 export default client
