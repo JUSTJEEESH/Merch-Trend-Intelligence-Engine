@@ -142,8 +142,8 @@ function TrendingTab({ onCopy, copiedText }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-zinc-100">Live Social Media Trends</h2>
-          <p className="text-sm text-zinc-500">Real-time data from Google Trends, Reddit, TikTok & Twitter</p>
+          <h2 className="text-lg font-semibold text-zinc-100">Merch Trend Research</h2>
+          <p className="text-sm text-zinc-500">What buyers are actually searching for on Amazon & Etsy</p>
           {trends.is_live && (
             <span className="inline-block mt-1 text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full animate-pulse">
               LIVE DATA
@@ -169,24 +169,24 @@ function TrendingTab({ onCopy, copiedText }) {
         </p>
       )}
 
-      {/* Platform sections */}
-      {['google', 'tiktok', 'twitter', 'reddit'].map((platform) => (
+      {/* Platform sections - Merch-specific sources */}
+      {['amazon', 'etsy', 'google'].map((platform) => (
         <div key={platform} className="space-y-3">
           <div className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              platform === 'google' ? 'bg-emerald-500/20' :
-              platform === 'tiktok' ? 'bg-pink-500/20' :
-              platform === 'twitter' ? 'bg-blue-500/20' : 'bg-orange-500/20'
+              platform === 'amazon' ? 'bg-orange-500/20' :
+              platform === 'etsy' ? 'bg-pink-500/20' : 'bg-emerald-500/20'
             }`}>
-              {platform === 'google' ? <TrendingUp size={16} className="text-emerald-400" /> :
-               platform === 'tiktok' ? <Hash size={16} className="text-pink-400" /> :
-               platform === 'twitter' ? <MessageCircle size={16} className="text-blue-400" /> :
-               <ArrowUpRight size={16} className="text-orange-400" />}
+              {platform === 'amazon' ? <TrendingUp size={16} className="text-orange-400" /> :
+               platform === 'etsy' ? <Hash size={16} className="text-pink-400" /> :
+               <ArrowUpRight size={16} className="text-emerald-400" />}
             </div>
-            <h3 className="font-medium text-zinc-200 capitalize">{platform === 'google' ? 'Google Trends' : platform}</h3>
+            <h3 className="font-medium text-zinc-200 capitalize">
+              {platform === 'amazon' ? 'Amazon Searches' : platform === 'etsy' ? 'Etsy Trends' : 'Google Trends'}
+            </h3>
             <span className="text-xs text-zinc-500">{trends[platform]?.length || 0} trends</span>
-            {platform === 'google' && trends[platform]?.length > 0 && (
-              <span className="text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded">Primary Source</span>
+            {platform === 'amazon' && trends[platform]?.length > 0 && (
+              <span className="text-xs px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded">Primary Source</span>
             )}
           </div>
 

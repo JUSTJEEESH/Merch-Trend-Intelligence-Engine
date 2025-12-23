@@ -266,7 +266,7 @@ export default function Dashboard() {
   const [searchFilter, setSearchFilter] = useState('')
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
 
-  // Fetch LIVE trending data from backend
+  // Fetch LIVE trending data from backend (Amazon + Etsy autocomplete)
   const {
     data: trendsData,
     isLoading: trendsLoading,
@@ -274,7 +274,7 @@ export default function Dashboard() {
     refetch: refetchTrends
   } = useQuery({
     queryKey: ['trends'],
-    queryFn: getAllTrends,
+    queryFn: () => getAllTrends(15),
     staleTime: 1000 * 60 * 15, // 15 minutes
     refetchOnMount: true,
   })
@@ -474,12 +474,12 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Trending Section - LIVE DATA */}
+      {/* Trending Section - LIVE MERCH DATA */}
       <div className="bg-gradient-to-r from-zinc-900 to-zinc-900/50 rounded-xl border border-zinc-800 p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <TrendingUp size={18} className="text-emerald-400" />
-            <h2 className="text-base font-semibold text-zinc-200">Trending Now</h2>
+            <h2 className="text-base font-semibold text-zinc-200">What Buyers Are Searching</h2>
             {!trendsLoading && liveTrends.length > 0 && (
               <>
                 <span className="text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full animate-pulse">LIVE</span>
@@ -489,10 +489,9 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <span className="px-2 py-1 bg-orange-500/10 text-orange-400 rounded">Amazon</span>
+              <span className="px-2 py-1 bg-pink-500/10 text-pink-400 rounded">Etsy</span>
               <span className="px-2 py-1 bg-emerald-500/10 text-emerald-400 rounded">Google</span>
-              <span className="px-2 py-1 bg-orange-500/10 text-orange-400 rounded">Reddit</span>
-              <span className="px-2 py-1 bg-pink-500/10 text-pink-400 rounded">TikTok</span>
-              <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded">Twitter</span>
             </div>
             <button
               onClick={() => refreshMutation.mutate()}
@@ -510,7 +509,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <Loader2 size={24} className="animate-spin text-emerald-400 mx-auto mb-3" />
-              <p className="text-sm text-zinc-500">Fetching live trends from Google, Reddit, TikTok...</p>
+              <p className="text-sm text-zinc-500">Fetching what buyers are searching for...</p>
             </div>
           </div>
         )}
@@ -587,7 +586,7 @@ export default function Dashboard() {
         {/* Last updated info */}
         {trendsData?.data?.fetched_at && (
           <div className="mt-3 pt-3 border-t border-zinc-800 flex items-center justify-between text-xs text-zinc-600">
-            <span>Data from: Google Trends, Reddit Public API</span>
+            <span>Data from: Amazon & Etsy search suggestions</span>
             <span>Updated: {new Date(trendsData.data.fetched_at).toLocaleTimeString()}</span>
           </div>
         )}
