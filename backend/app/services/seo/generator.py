@@ -10,15 +10,14 @@ class SEOGenerator:
 
     PRIORITIES:
     1. Amazon compliance (no rejections)
-    2. Natural, readable language
-    3. Buyer search intent
+    2. Title SEO - maximize 60 char limit with relevant keywords
+    3. Natural, readable language
     4. Meaning and attitude over design description
 
-    DO NOT:
-    - Describe fonts, typography, spacing, or layout
-    - Sound like a graphic design analysis
-    - Use promotional language
-    - Mention gifts, occasions, or special uses
+    RULES:
+    - NO em dashes
+    - Description must be ONE paragraph (no line breaks)
+    - Title must use close to 60 characters with SEO keywords
     """
 
     # Words/phrases that will get listings REJECTED
@@ -73,6 +72,39 @@ class SEOGenerator:
         "proud": ["pride", "confidence", "self-expression"],
         "relatable": ["real talk", "honesty", "everyday life"],
         "aesthetic": ["vibe", "mood", "energy"],
+    }
+
+    # SEO keyword modifiers for titles
+    TITLE_SEO_TERMS = {
+        "funny": ["Funny", "Humor", "Hilarious", "Comedic", "Witty"],
+        "sarcastic": ["Sarcastic", "Sassy", "Witty", "Ironic", "Dry Humor"],
+        "motivational": ["Motivational", "Inspiring", "Empowering", "Uplifting"],
+        "wholesome": ["Positive", "Uplifting", "Wholesome", "Feel Good"],
+        "edgy": ["Bold", "Edgy", "Attitude", "Rebellious"],
+        "proud": ["Proud", "Confident", "Bold"],
+        "relatable": ["Relatable", "Real", "Honest", "True"],
+        "aesthetic": ["Aesthetic", "Vibe", "Mood", "Trendy"],
+    }
+
+    # Niche SEO terms for titles
+    NICHE_TITLE_TERMS = {
+        "coffee": ["Coffee Lover", "Caffeine", "Coffee Addict", "Barista"],
+        "dogs": ["Dog Mom", "Dog Dad", "Dog Lover", "Pet Parent", "Puppy"],
+        "cats": ["Cat Mom", "Cat Dad", "Cat Lover", "Crazy Cat", "Feline"],
+        "fitness": ["Gym", "Workout", "Fitness", "Lifting", "Exercise"],
+        "nursing": ["Nurse", "RN", "Nursing", "Healthcare", "Medical"],
+        "teaching": ["Teacher", "Educator", "Teaching", "School", "Classroom"],
+        "mom": ["Mom", "Mother", "Mama", "Mommy", "Mom Life"],
+        "dad": ["Dad", "Father", "Daddy", "Dad Life", "Dad Joke"],
+        "gaming": ["Gamer", "Gaming", "Video Game", "Player", "Nerd"],
+        "work": ["Office", "Work", "Job", "Employee", "Boss", "Coworker"],
+        "beer": ["Beer", "Craft Beer", "Drinking", "Brew", "IPA"],
+        "wine": ["Wine", "Wine Lover", "Vino", "Wine Mom", "Wino"],
+        "fishing": ["Fishing", "Angler", "Fish", "Bass", "Reel"],
+        "hunting": ["Hunting", "Hunter", "Deer", "Outdoor", "Buck"],
+        "introvert": ["Introvert", "Antisocial", "Homebody", "Quiet"],
+        "sarcasm": ["Sarcasm", "Sarcastic", "Petty", "Savage", "Witty"],
+        "anxiety": ["Anxiety", "Anxious", "Mental Health", "Overthinking"],
     }
 
     # Audience descriptors by niche
@@ -192,9 +224,6 @@ class SEOGenerator:
     ) -> Dict[str, Any]:
         """
         Generate a complete, compliant, publishable Amazon Merch listing.
-
-        Returns dict with title, brand, bullet_1, bullet_2, description, keywords.
-        All content focuses on MEANING and ATTITUDE, not design description.
         """
         audience = self._get_audience(niche)
         vibes = self.TONE_VIBES.get(style, self.TONE_VIBES["funny"])
@@ -223,76 +252,59 @@ class SEOGenerator:
 
     def _generate_title(self, phrase: str, style: str, niche: Optional[str]) -> Dict[str, Any]:
         """
-        Generate title (60 chars MAX).
-        Lead with phrase, add 1-2 relevant modifiers.
+        Generate SEO-optimized title (60 chars MAX).
+        PRIORITY: Use as close to 60 characters as possible with relevant keywords.
         """
         clean_phrase = phrase.strip()
+        limit = self.LIMITS["title"]
 
-        # Style modifiers
-        style_mods = {
-            "funny": ["Funny", "Humor", "Hilarious"],
-            "sarcastic": ["Sarcastic", "Sassy", "Witty"],
-            "motivational": ["Motivational", "Inspiring"],
-            "wholesome": ["Positive", "Uplifting"],
-            "edgy": ["Bold", "Edgy"],
-            "proud": ["Proud"],
-            "relatable": ["Relatable", "Real"],
-            "aesthetic": ["Aesthetic", "Vibe"],
-        }
+        # Get SEO terms for this style and niche
+        style_terms = self.TITLE_SEO_TERMS.get(style, ["Funny", "Humor"])
+        niche_terms = self.NICHE_TITLE_TERMS.get(niche, []) if niche else []
 
-        mod = random.choice(style_mods.get(style, ["Funny"]))
+        # Build title variations from longest to shortest
+        title_options = []
 
-        # Niche modifiers
-        niche_mods = {
-            "coffee": "Coffee Lover",
-            "dogs": "Dog Owner",
-            "cats": "Cat Person",
-            "fitness": "Gym",
-            "nursing": "Nurse",
-            "teaching": "Teacher",
-            "mom": "Mom",
-            "dad": "Dad",
-            "gaming": "Gamer",
-            "work": "Office",
-            "beer": "Beer Lover",
-            "wine": "Wine Lover",
-            "fishing": "Fishing",
-            "hunting": "Hunting",
-            "introvert": "Introvert",
-            "sarcasm": "Sarcastic",
-            "anxiety": "Anxiety",
-        }
+        # Try: Phrase - Niche Term Style Term Saying
+        if niche_terms:
+            for nt in niche_terms:
+                for st in style_terms:
+                    title_options.append(f"{clean_phrase} - {st} {nt} Saying")
+                    title_options.append(f"{clean_phrase} - {nt} {st} Quote")
+                    title_options.append(f"{clean_phrase} {st} {nt} Saying")
+                    title_options.append(f"{clean_phrase} - {st} {nt}")
+                    title_options.append(f"{clean_phrase} {nt} {st}")
 
-        niche_mod = niche_mods.get(niche, "") if niche else ""
+        # Try: Phrase - Style Term Saying/Quote
+        for st in style_terms:
+            title_options.append(f"{clean_phrase} - {st} Saying Quote")
+            title_options.append(f"{clean_phrase} - {st} Humor Saying")
+            title_options.append(f"{clean_phrase} - {st} Quote Saying")
+            title_options.append(f"{clean_phrase} - {st} Saying")
+            title_options.append(f"{clean_phrase} - {st} Quote")
+            title_options.append(f"{clean_phrase} {st} Saying")
+            title_options.append(f"{clean_phrase} {st} Quote")
 
-        # Build title options
-        options = []
+        # Generic fallbacks
+        title_options.append(f"{clean_phrase} - Funny Saying Quote")
+        title_options.append(f"{clean_phrase} - Humor Quote")
+        title_options.append(f"{clean_phrase} Funny Saying")
+        title_options.append(f"{clean_phrase}")
 
-        if niche_mod:
-            options.append(f"{clean_phrase} - {mod} {niche_mod}")
-            options.append(f"{clean_phrase} {mod} {niche_mod}")
+        # Find the LONGEST title that fits within 60 chars
+        best_title = clean_phrase
+        best_length = len(clean_phrase)
 
-        options.append(f"{clean_phrase} - {mod} Saying")
-        options.append(f"{clean_phrase} {mod} Quote")
-        options.append(f"{clean_phrase}")
+        for title in title_options:
+            if len(title) <= limit and len(title) > best_length:
+                best_title = title
+                best_length = len(title)
 
-        # Find first that fits
-        for title in options:
-            if len(title) <= self.LIMITS["title"]:
-                return {
-                    "text": title,
-                    "length": len(title),
-                    "limit": self.LIMITS["title"],
-                    "compliant": True,
-                }
-
-        # Truncate if needed
-        truncated = clean_phrase[:self.LIMITS["title"]]
         return {
-            "text": truncated,
-            "length": len(truncated),
-            "limit": self.LIMITS["title"],
-            "compliant": True,
+            "text": best_title,
+            "length": len(best_title),
+            "limit": limit,
+            "compliant": len(best_title) <= limit,
         }
 
     def _generate_brand(self) -> Dict[str, Any]:
@@ -308,17 +320,17 @@ class SEOGenerator:
     def _generate_bullet_1(self, phrase: str, style: str, vibes: List[str]) -> Dict[str, Any]:
         """
         Bullet 1: Meaning / attitude / vibe of the phrase.
-        Focus on what it MEANS, not how it looks.
+        NO em dashes. Focus on what it MEANS.
         """
         vibe = random.choice(vibes)
         clean = phrase.strip()
 
         templates = [
-            f'"{clean}" — because sometimes you just have to say it. This is for anyone who appreciates a little {vibe} and isn\'t afraid to show it.',
-            f'"{clean}" says it all. Pure, unfiltered {vibe} for those who get it.',
-            f'Some things just need to be said out loud. "{clean}" is that energy — honest, real, and full of {vibe}.',
-            f'"{clean}" — when words perfectly capture what you\'re feeling. It\'s that {vibe} we all need sometimes.',
-            f'This says what everyone\'s thinking. "{clean}" is {vibe} in its purest form.',
+            f'"{clean}" says it all. Sometimes you just have to say what you are thinking, and this does it with pure {vibe}.',
+            f'"{clean}" is that energy. Honest, real, and full of {vibe} for anyone who gets it.',
+            f'Some things just need to be said out loud. "{clean}" captures that {vibe} perfectly.',
+            f'This says what everyone is thinking. "{clean}" is {vibe} in its purest form.',
+            f'"{clean}" hits different. It is that {vibe} we all need sometimes, no apologies.',
         ]
 
         bullet = random.choice(templates)
@@ -335,19 +347,18 @@ class SEOGenerator:
 
     def _generate_bullet_2(self, phrase: str, audience: Dict) -> Dict[str, Any]:
         """
-        Bullet 2: Who relates to it (job, lifestyle, personality, mindset).
-        NO "perfect for" or promotional framing.
+        Bullet 2: Who relates to it. NO em dashes.
         """
         people = random.choice(audience["people"])
         mindset = random.choice(audience["mindsets"])
         context = random.choice(audience["contexts"])
 
         templates = [
-            f"If you know, you know. {people.capitalize()} who live that {mindset} life will instantly get this.",
-            f"Made for {people} who understand {context}. It's not just words — it's a whole mood.",
-            f"{people.capitalize()} get it. This is {context} summed up perfectly.",
+            f"If you know, you know. {people.capitalize()} who live that {mindset} life will instantly get this one.",
+            f"Made for {people} who understand {context}. It is not just words, it is a whole mood.",
+            f"{people.capitalize()} get it. This is {context} summed up perfectly in one statement.",
             f"Real recognizes real. {people.capitalize()} living that {mindset} lifestyle know exactly what this means.",
-            f"This one's for the {people}. If {context} is your reality, you'll relate.",
+            f"This one is for the {people} out there. If {context} is your reality, you will relate hard.",
         ]
 
         bullet = random.choice(templates)
@@ -371,8 +382,7 @@ class SEOGenerator:
     ) -> Dict[str, Any]:
         """
         Description (75-2000 chars).
-        Expand on meaning and tone. Explain why people connect.
-        Sound like a real seller, not a design analyzer.
+        ONE PARAGRAPH only. NO em dashes. NO line breaks.
         """
         clean = phrase.strip()
         vibe = random.choice(vibes)
@@ -380,37 +390,20 @@ class SEOGenerator:
         mindset = random.choice(audience["mindsets"])
         context = random.choice(audience["contexts"])
 
+        # Single paragraph descriptions
         descriptions = [
-            f'''"{clean}"
+            f'"{clean}" is one of those phrases that just hits. We have all been there, that moment when {context} is real and you need to express yourself. {people.capitalize()} will instantly get it. There is something satisfying about wearing something that says exactly what you are thinking with no filter and no apologies, just pure {vibe}. Whether you say it out loud or let your clothes do the talking, this one speaks volumes. It is that {mindset} energy that connects people who just get it.',
 
-We've all been there. That moment when {context} hits and you just need to express yourself. This captures that feeling perfectly.
+            f'"{clean}" says what needs to be said. If you have ever felt that {mindset} vibe, you already know. This is for {people} who are not afraid to express what they are really thinking. {context.capitalize()} is real, and sometimes you need a way to show it. That is what this is about, {vibe} that resonates and a message that lands. Wear it when you mean it because the right people will get it.',
 
-{people.capitalize()} will instantly get it. There's something satisfying about wearing something that says exactly what you're thinking. No filter, no apologies — just pure {vibe}.
-
-Whether you say it out loud or let your clothes do the talking, this one speaks volumes. It's that {mindset} energy that connects people who just get it.''',
-
-            f'''"{clean}" — some things don't need explaining.
-
-If you've ever felt that {mindset} vibe, you already know. This is for {people} who aren't afraid to express what they're really thinking.
-
-{context.capitalize()} is real, and sometimes you need a way to show it. That's what this is about — {vibe} that resonates, a message that lands.
-
-Wear it when you mean it. The right people will get it.''',
-
-            f'''"{clean}"
-
-Words that just hit different. If you're one of those {people} who lives {context}, this probably made you smile — or at least nod.
-
-There's a reason some phrases just stick. They capture something real, something relatable. This is that {vibe} energy.
-
-It's not trying too hard. It doesn't overthink it. It just says what needs to be said. {mindset.capitalize()} is a way of life, and this fits right in.''',
+            f'"{clean}" just hits different. If you are one of those {people} who lives {context}, this probably made you smile or at least nod. There is a reason some phrases just stick because they capture something real and relatable. This is that {vibe} energy. It is not trying too hard and it does not overthink it. It just says what needs to be said. {mindset.capitalize()} is a way of life and this fits right in.',
         ]
 
         description = random.choice(descriptions)
 
         # Ensure within limits
         if len(description) < self.LIMITS["description_min"]:
-            description += f"\n\n{people.capitalize()} everywhere relate to this."
+            description += f" {people.capitalize()} everywhere relate to this message."
 
         if len(description) > self.LIMITS["description_max"]:
             description = description[:self.LIMITS["description_max"] - 3] + "..."
@@ -441,6 +434,11 @@ It's not trying too hard. It doesn't overthink it. It just says what needs to be
         # Add niche keywords
         if niche:
             keywords.add(niche.lower())
+            # Add niche title terms
+            for term in self.NICHE_TITLE_TERMS.get(niche, []):
+                for word in term.lower().split():
+                    if not self._is_forbidden(word):
+                        keywords.add(word)
 
         # Add audience-related keywords
         for person in audience.get("people", []):
