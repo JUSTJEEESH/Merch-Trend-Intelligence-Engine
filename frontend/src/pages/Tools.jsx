@@ -112,6 +112,9 @@ export default function Tools() {
 
 // ============ TRENDING TAB ============
 function TrendingTab({ onCopy, copiedText }) {
+  const [viewMode, setViewMode] = useState('opportunities') // opportunities, platforms, all
+  const [expandedTrend, setExpandedTrend] = useState(null)
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['allTrends'],
     queryFn: () => getAllTrends(15),
@@ -137,36 +140,163 @@ function TrendingTab({ onCopy, copiedText }) {
   }
 
   const trends = data?.data || {}
+  const summary = trends.summary || {}
+  const topOpportunities = trends.top_opportunities || []
+
+  // Signal color mapping
+  const signalColors = {
+    emerald: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    green: 'bg-green-500/20 text-green-400 border-green-500/30',
+    yellow: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    orange: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+    red: 'bg-red-500/20 text-red-400 border-red-500/30',
+    zinc: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
+  }
+
+  // Competition color mapping
+  const compColors = {
+    low: 'text-emerald-400',
+    medium: 'text-yellow-400',
+    high: 'text-orange-400',
+    very_high: 'text-red-400',
+  }
 
   // Platform display config
   const MERCH_PLATFORMS = [
-    { key: 'amazon', name: 'Amazon Searches', color: 'orange', icon: TrendingUp, desc: "What buyers search for" },
-    { key: 'etsy', name: 'Etsy Trends', color: 'pink', icon: Hash, desc: "POD marketplace" },
-    { key: 'pinterest', name: 'Pinterest', color: 'red', icon: Palette, desc: "Design inspiration" },
+    { key: 'amazon', name: 'Amazon', color: 'orange', icon: TrendingUp },
+    { key: 'etsy', name: 'Etsy', color: 'pink', icon: Hash },
+    { key: 'pinterest', name: 'Pinterest', color: 'red', icon: Palette },
   ]
 
   const VIRAL_PLATFORMS = [
-    { key: 'reddit', name: 'Reddit', color: 'orange', icon: ArrowUpRight, desc: "Breaking memes" },
-    { key: 'tiktok', name: 'TikTok', color: 'pink', icon: Zap, desc: "Viral content" },
-    { key: 'twitter', name: 'Twitter/X', color: 'blue', icon: MessageCircle, desc: "Trending topics" },
+    { key: 'reddit', name: 'Reddit', color: 'orange', icon: ArrowUpRight },
+    { key: 'tiktok', name: 'TikTok', color: 'pink', icon: Zap },
+    { key: 'twitter', name: 'Twitter/X', color: 'blue', icon: MessageCircle },
   ]
+
+  // Trend Card Component
+  const TrendCard = ({ trend, idx, showPlatform = false }) => {
+    const signal = trend.signal || {}
+    const lifecycle = trend.lifecycle || {}
+    const competition = trend.competition || {}
+    const isExpanded = expandedTrend === `${trend.trend}-${idx}`
+
+    return (
+      <div
+        className={`bg-zinc-800/50 rounded-xl border transition-all cursor-pointer ${
+          signal.color === 'emerald' ? 'border-emerald-500/30 hover:border-emerald-500/50' :
+          signal.color === 'green' ? 'border-green-500/30 hover:border-green-500/50' :
+          'border-zinc-700/50 hover:border-zinc-600'
+        }`}
+        onClick={() => setExpandedTrend(isExpanded ? null : `${trend.trend}-${idx}`)}
+      >
+        {/* Main Content */}
+        <div className="p-4">
+          {/* Top Row: Signal + Score */}
+          <div className="flex items-center justify-between mb-2">
+            <span className={`text-xs font-bold px-2 py-0.5 rounded border ${signalColors[signal.color] || signalColors.zinc}`}>
+              {signal.label || '?'}
+            </span>
+            <div className="flex items-center gap-2">
+              <span className={`text-lg font-bold ${
+                trend.opportunity_score >= 70 ? 'text-emerald-400' :
+                trend.opportunity_score >= 55 ? 'text-yellow-400' : 'text-zinc-400'
+              }`}>
+                {trend.opportunity_score || 0}
+              </span>
+              <span className="text-xs text-zinc-500">/ 100</span>
+            </div>
+          </div>
+
+          {/* Phrase */}
+          <h4 className="font-semibold text-zinc-100 mb-2 leading-tight">{trend.trend}</h4>
+
+          {/* Tags Row */}
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            {/* Lifecycle Badge */}
+            <span className={`text-xs px-2 py-0.5 rounded ${
+              lifecycle.color === 'emerald' ? 'bg-emerald-500/20 text-emerald-400' :
+              lifecycle.color === 'green' ? 'bg-green-500/20 text-green-400' :
+              lifecycle.color === 'orange' ? 'bg-orange-500/20 text-orange-400' :
+              lifecycle.color === 'yellow' ? 'bg-yellow-500/20 text-yellow-400' :
+              lifecycle.color === 'red' ? 'bg-red-500/20 text-red-400' :
+              'bg-blue-500/20 text-blue-400'
+            }`}>
+              {lifecycle.label || 'Stable'}
+            </span>
+
+            {/* Competition */}
+            <span className={`text-xs ${compColors[competition.level] || 'text-zinc-400'}`}>
+              {competition.icon} {competition.label} comp
+            </span>
+
+            {/* Growth */}
+            <span className="text-xs text-zinc-500">{trend.growth}</span>
+          </div>
+
+          {/* Platform + Actions */}
+          <div className="flex items-center justify-between">
+            {showPlatform && (
+              <span className="text-xs text-zinc-500">{trend.platform}</span>
+            )}
+            {!showPlatform && <span />}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onCopy(trend.trend)
+              }}
+              className="p-1.5 hover:bg-zinc-700 rounded"
+            >
+              {copiedText === trend.trend ? (
+                <Check size={14} className="text-emerald-400" />
+              ) : (
+                <Copy size={14} className="text-zinc-500" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Expanded Details */}
+        {isExpanded && (
+          <div className="px-4 pb-4 pt-2 border-t border-zinc-700/50 space-y-3">
+            {/* Score Breakdown */}
+            <div className="grid grid-cols-4 gap-2">
+              {trend.score_components && Object.entries(trend.score_components).map(([key, val]) => (
+                <div key={key} className="text-center">
+                  <div className="text-lg font-bold text-zinc-200">{val}</div>
+                  <div className="text-xs text-zinc-500 capitalize">{key.replace('_', ' ')}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Quick Info */}
+            <div className="text-xs text-zinc-400 space-y-1">
+              {trend.search_query && trend.search_query !== trend.trend && (
+                <p><span className="text-zinc-500">Query:</span> {trend.search_query}</p>
+              )}
+              <p><span className="text-zinc-500">Source:</span> {trend.source}</p>
+              {lifecycle.desc && (
+                <p><span className="text-zinc-500">Stage:</span> {lifecycle.desc}</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-zinc-100">Merch Trend Research</h2>
-          <p className="text-sm text-zinc-500">Real data from Amazon, Etsy, Pinterest + viral platforms</p>
-          {trends.is_live && (
-            <span className="inline-block mt-1 text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full animate-pulse">
-              LIVE DATA
-            </span>
-          )}
+          <h2 className="text-lg font-semibold text-zinc-100">Merch Trend Intelligence</h2>
+          <p className="text-sm text-zinc-500">Real-time opportunity scoring for merch research</p>
         </div>
         <div className="flex items-center gap-2">
-          {trends.counts && (
-            <span className="text-xs text-zinc-500">
-              {Object.values(trends.counts).reduce((a, b) => a + b, 0)} total trends
+          {trends.is_live && (
+            <span className="text-xs px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded-full animate-pulse">
+              ● LIVE
             </span>
           )}
           <button
@@ -175,135 +305,199 @@ function TrendingTab({ onCopy, copiedText }) {
             className="flex items-center gap-2 px-3 py-2 bg-zinc-800 rounded-lg text-sm text-zinc-400 hover:text-zinc-200 disabled:opacity-50"
           >
             <RefreshCw size={14} className={refreshMutation.isPending ? 'animate-spin' : ''} />
-            {refreshMutation.isPending ? 'Refreshing...' : 'Refresh'}
+            Refresh
           </button>
         </div>
       </div>
 
-      {/* Last updated */}
-      {trends.fetched_at && (
-        <p className="text-xs text-zinc-600">
-          Updated: {new Date(trends.fetched_at).toLocaleTimeString()}
-        </p>
+      {/* Summary Cards - Helium 10 Style */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Target size={14} className="text-emerald-400" />
+            <span className="text-xs text-emerald-400">High Opportunity</span>
+          </div>
+          <p className="text-2xl font-bold text-emerald-400">{summary.high_opportunity_count || 0}</p>
+          <p className="text-xs text-zinc-500">Score 70+</p>
+        </div>
+
+        <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Zap size={14} className="text-blue-400" />
+            <span className="text-xs text-blue-400">Emerging</span>
+          </div>
+          <p className="text-2xl font-bold text-blue-400">{summary.emerging_count || 0}</p>
+          <p className="text-xs text-zinc-500">Early stage</p>
+        </div>
+
+        <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Star size={14} className="text-purple-400" />
+            <span className="text-xs text-purple-400">Low Competition</span>
+          </div>
+          <p className="text-2xl font-bold text-purple-400">{summary.low_competition_count || 0}</p>
+          <p className="text-xs text-zinc-500">Easy entry</p>
+        </div>
+
+        <div className="bg-zinc-800/50 border border-zinc-700/50 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <BarChart3 size={14} className="text-zinc-400" />
+            <span className="text-xs text-zinc-400">Avg Score</span>
+          </div>
+          <p className="text-2xl font-bold text-zinc-200">{summary.avg_opportunity_score || 0}</p>
+          <p className="text-xs text-zinc-500">{trends.counts?.total || 0} total</p>
+        </div>
+      </div>
+
+      {/* View Mode Tabs */}
+      <div className="flex gap-2 border-b border-zinc-800 pb-2">
+        {[
+          { id: 'opportunities', label: 'Top Opportunities', icon: Target },
+          { id: 'platforms', label: 'By Platform', icon: Hash },
+          { id: 'all', label: 'All Trends', icon: TrendingUp },
+        ].map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setViewMode(id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all ${
+              viewMode === id
+                ? 'bg-emerald-500/20 text-emerald-400'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Icon size={14} />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* TOP OPPORTUNITIES VIEW */}
+      {viewMode === 'opportunities' && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-6 bg-emerald-500 rounded-full" />
+            <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wide">
+              Top Opportunities (Score 70+)
+            </h3>
+          </div>
+
+          {topOpportunities.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {topOpportunities.map((trend, idx) => (
+                <TrendCard key={idx} trend={trend} idx={idx} showPlatform />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-zinc-500">
+              <Target size={32} className="mx-auto mb-2 opacity-50" />
+              <p>No high-opportunity trends found</p>
+              <p className="text-xs">Try refreshing to fetch new data</p>
+            </div>
+          )}
+
+          {/* Quick Stats */}
+          {topOpportunities.length > 0 && (
+            <div className="flex items-center gap-4 text-xs text-zinc-500 pt-2">
+              <span>Showing {topOpportunities.length} opportunities</span>
+              <span>•</span>
+              <span>Click any card for details</span>
+            </div>
+          )}
+        </div>
       )}
 
-      {/* MERCH TRENDS - What's Selling */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-6 bg-emerald-500 rounded-full" />
-          <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wide">Merch Trends - What's Selling</h3>
-        </div>
-
-        {MERCH_PLATFORMS.map(({ key, name, color, icon: Icon, desc }) => (
-          <div key={key} className="space-y-3">
+      {/* PLATFORMS VIEW */}
+      {viewMode === 'platforms' && (
+        <div className="space-y-6">
+          {/* MERCH TRENDS */}
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-${color}-500/20`}>
-                <Icon size={16} className={`text-${color}-400`} />
-              </div>
-              <h4 className="font-medium text-zinc-200">{name}</h4>
-              <span className="text-xs text-zinc-500">{trends[key]?.length || 0} trends</span>
-              <span className="text-xs text-zinc-600">• {desc}</span>
+              <div className="w-2 h-6 bg-emerald-500 rounded-full" />
+              <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wide">
+                Merch Trends - What's Selling
+              </h3>
             </div>
 
-            {(trends[key]?.length || 0) > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto">
-                {(trends[key] || []).map((trend, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50 hover:border-zinc-600 transition-all"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="font-medium text-zinc-200">{trend.trend}</span>
-                      <span className="text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded">
-                        {trend.growth}
-                      </span>
-                    </div>
-                    {trend.search_query && trend.search_query !== trend.trend && (
-                      <p className="text-xs text-zinc-500 mb-2 truncate">{trend.search_query}</p>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-zinc-500">
-                        {trend.shirt_potential?.rating || 'Good'} potential
-                      </span>
-                      <button
-                        onClick={() => onCopy(trend.trend)}
-                        className="p-1 hover:bg-zinc-700 rounded"
-                      >
-                        {copiedText === trend.trend ? (
-                          <Check size={12} className="text-emerald-400" />
-                        ) : (
-                          <Copy size={12} className="text-zinc-500" />
-                        )}
-                      </button>
-                    </div>
+            {MERCH_PLATFORMS.map(({ key, name, icon: Icon }) => (
+              <div key={key} className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Icon size={16} className="text-zinc-400" />
+                  <h4 className="font-medium text-zinc-200">{name}</h4>
+                  <span className="text-xs text-zinc-500">{trends[key]?.length || 0}</span>
+                </div>
+
+                {(trends[key]?.length || 0) > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {(trends[key] || []).slice(0, 6).map((trend, idx) => (
+                      <TrendCard key={idx} trend={trend} idx={idx} />
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <p className="text-sm text-zinc-600 italic">No data available</p>
+                )}
               </div>
-            ) : (
-              <p className="text-sm text-zinc-600 italic">No {name.toLowerCase()} data available</p>
-            )}
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* VIRAL TRENDS - Breaking Content */}
-      <div className="space-y-4 pt-4 border-t border-zinc-800">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-6 bg-purple-500 rounded-full" />
-          <h3 className="text-sm font-semibold text-purple-400 uppercase tracking-wide">Viral Trends - Breaking Now</h3>
-        </div>
-
-        {VIRAL_PLATFORMS.map(({ key, name, color, icon: Icon, desc }) => (
-          <div key={key} className="space-y-3">
+          {/* VIRAL TRENDS */}
+          <div className="space-y-4 pt-4 border-t border-zinc-800">
             <div className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-${color}-500/20`}>
-                <Icon size={16} className={`text-${color}-400`} />
-              </div>
-              <h4 className="font-medium text-zinc-200">{name}</h4>
-              <span className="text-xs text-zinc-500">{trends[key]?.length || 0} trends</span>
-              <span className="text-xs text-zinc-600">• {desc}</span>
+              <div className="w-2 h-6 bg-purple-500 rounded-full" />
+              <h3 className="text-sm font-semibold text-purple-400 uppercase tracking-wide">
+                Viral Trends - Breaking Now
+              </h3>
             </div>
 
-            {(trends[key]?.length || 0) > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto">
-                {(trends[key] || []).map((trend, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50 hover:border-zinc-600 transition-all"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="font-medium text-zinc-200">{trend.trend}</span>
-                      <span className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded">
-                        {trend.growth}
-                      </span>
-                    </div>
-                    {trend.upvotes && (
-                      <p className="text-xs text-zinc-500 mb-2">↑ {trend.upvotes} upvotes</p>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-zinc-500">
-                        {trend.shirt_potential?.rating || 'Good'} potential
-                      </span>
-                      <button
-                        onClick={() => onCopy(trend.trend)}
-                        className="p-1 hover:bg-zinc-700 rounded"
-                      >
-                        {copiedText === trend.trend ? (
-                          <Check size={12} className="text-emerald-400" />
-                        ) : (
-                          <Copy size={12} className="text-zinc-500" />
-                        )}
-                      </button>
-                    </div>
+            {VIRAL_PLATFORMS.map(({ key, name, icon: Icon }) => (
+              <div key={key} className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Icon size={16} className="text-zinc-400" />
+                  <h4 className="font-medium text-zinc-200">{name}</h4>
+                  <span className="text-xs text-zinc-500">{trends[key]?.length || 0}</span>
+                </div>
+
+                {(trends[key]?.length || 0) > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {(trends[key] || []).slice(0, 6).map((trend, idx) => (
+                      <TrendCard key={idx} trend={trend} idx={idx} />
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <p className="text-sm text-zinc-600 italic">No data available</p>
+                )}
               </div>
-            ) : (
-              <p className="text-sm text-zinc-600 italic">No {name.toLowerCase()} data available</p>
-            )}
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* ALL TRENDS VIEW */}
+      {viewMode === 'all' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-6 bg-zinc-500 rounded-full" />
+              <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide">
+                All Trends (Sorted by Opportunity)
+              </h3>
+            </div>
+            <span className="text-xs text-zinc-500">{trends.combined?.length || 0} trends</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {(trends.combined || []).map((trend, idx) => (
+              <TrendCard key={idx} trend={trend} idx={idx} showPlatform />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Footer Info */}
+      {trends.fetched_at && (
+        <p className="text-xs text-zinc-600 text-center pt-4 border-t border-zinc-800">
+          Data updated: {new Date(trends.fetched_at).toLocaleString()}
+        </p>
+      )}
     </div>
   )
 }

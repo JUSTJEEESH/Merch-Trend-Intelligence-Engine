@@ -4,7 +4,11 @@ TWO categories of trends:
 1. MERCH TRENDS - What's selling (Amazon, Etsy, Pinterest)
 2. VIRAL TRENDS - Breaking content (TikTok, Twitter, Reddit)
 
-This is how Merch Dominator and Merch Informer work.
+Enhanced with:
+- Opportunity Score (0-100) - Helium 10 / Jungle Scout style
+- Lifecycle Stage (emerging, peaking, saturated, declining)
+- Competition Density indicator
+- At-a-glance signals for fast decision making
 """
 import asyncio
 import aiohttp
@@ -17,6 +21,175 @@ from urllib.parse import quote_plus, urlencode
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================
+# OPPORTUNITY SCORING ENGINE
+# =============================================
+
+class OpportunityScorer:
+    """
+    Calculate Opportunity Score (0-100) like Helium 10/Jungle Scout.
+
+    Formula:
+    - Velocity Weight: 30% (how fast is it growing?)
+    - Novelty Weight: 25% (how new is it?)
+    - Saturation Weight: 25% (how crowded?)
+    - Shirt Fit Weight: 20% (good for merch?)
+    """
+
+    @staticmethod
+    def calculate(trend: Dict[str, Any]) -> Dict[str, Any]:
+        """Calculate opportunity score and lifecycle stage."""
+
+        # Extract available signals
+        growth_str = trend.get("growth", "+0%")
+        growth_pct = int(re.sub(r'[^\d-]', '', growth_str) or 0)
+
+        potential = trend.get("shirt_potential", {})
+        shirt_score = potential.get("score", 50)
+
+        platform = trend.get("platform", "").lower()
+        source = trend.get("source", "").lower()
+        phrase = trend.get("trend", "")
+
+        # 1. VELOCITY SCORE (30%) - Based on growth rate
+        if growth_pct >= 200:
+            velocity_score = 100
+        elif growth_pct >= 100:
+            velocity_score = 85
+        elif growth_pct >= 50:
+            velocity_score = 70
+        elif growth_pct >= 20:
+            velocity_score = 55
+        elif growth_pct >= 0:
+            velocity_score = 40
+        else:
+            velocity_score = max(10, 40 + growth_pct)  # Declining
+
+        # 2. NOVELTY SCORE (25%) - Is this a new opportunity?
+        # Higher scores for platforms with fresh data
+        if "amazon" in platform:
+            novelty_score = 85  # Direct buyer intent
+        elif "etsy" in platform:
+            novelty_score = 80  # POD market
+        elif "pinterest" in platform:
+            novelty_score = 75  # Design trends
+        elif "tiktok" in platform or "google" in source:
+            novelty_score = 90  # Breaking viral
+        elif "reddit" in platform:
+            novelty_score = 70  # Meme culture
+        else:
+            novelty_score = 60
+
+        # Boost for very high growth (likely new trend)
+        if growth_pct >= 150:
+            novelty_score = min(100, novelty_score + 15)
+
+        # 3. SATURATION ESTIMATE (25%) - Competition density
+        # Lower saturation = higher opportunity
+        # We estimate based on phrase characteristics
+        word_count = len(phrase.split())
+
+        # Specific phrases = less competition
+        if word_count >= 4:
+            saturation_score = 85  # Long tail = low competition
+        elif word_count == 3:
+            saturation_score = 70
+        elif word_count == 2:
+            saturation_score = 50
+        else:
+            saturation_score = 30  # Single word = saturated
+
+        # Platform adjustments
+        if "amazon" in platform:
+            saturation_score = max(20, saturation_score - 15)  # More competition
+        elif "etsy" in platform:
+            saturation_score = max(20, saturation_score - 10)
+
+        # 4. SHIRT FIT SCORE (20%) - Already calculated
+        shirt_fit_score = min(100, max(0, shirt_score))
+
+        # WEIGHTED TOTAL
+        opportunity_score = int(
+            velocity_score * 0.30 +
+            novelty_score * 0.25 +
+            saturation_score * 0.25 +
+            shirt_fit_score * 0.20
+        )
+
+        # Determine LIFECYCLE STAGE
+        lifecycle = OpportunityScorer._determine_lifecycle(
+            growth_pct, opportunity_score, saturation_score
+        )
+
+        # Determine COMPETITION DENSITY
+        competition = OpportunityScorer._determine_competition(
+            saturation_score, platform, word_count
+        )
+
+        return {
+            "opportunity_score": opportunity_score,
+            "lifecycle": lifecycle,
+            "competition": competition,
+            "components": {
+                "velocity": velocity_score,
+                "novelty": novelty_score,
+                "saturation": saturation_score,
+                "shirt_fit": shirt_fit_score,
+            },
+            "signal": OpportunityScorer._get_signal(opportunity_score, lifecycle),
+        }
+
+    @staticmethod
+    def _determine_lifecycle(growth_pct: int, opp_score: int, sat_score: int) -> Dict[str, Any]:
+        """
+        Determine lifecycle stage: emerging, rising, peaking, saturated, declining
+        """
+        if growth_pct >= 150 and sat_score >= 70:
+            return {"stage": "emerging", "label": "🚀 Emerging", "color": "emerald", "desc": "Get in early!"}
+        elif growth_pct >= 80 and sat_score >= 50:
+            return {"stage": "rising", "label": "📈 Rising", "color": "green", "desc": "Growing fast"}
+        elif growth_pct >= 30 and opp_score >= 60:
+            return {"stage": "peaking", "label": "🔥 Peaking", "color": "orange", "desc": "High demand now"}
+        elif growth_pct >= 0 and sat_score < 40:
+            return {"stage": "saturated", "label": "⚠️ Saturated", "color": "yellow", "desc": "High competition"}
+        elif growth_pct < 0:
+            return {"stage": "declining", "label": "📉 Declining", "color": "red", "desc": "Trend fading"}
+        else:
+            return {"stage": "stable", "label": "➡️ Stable", "color": "blue", "desc": "Steady interest"}
+
+    @staticmethod
+    def _determine_competition(sat_score: int, platform: str, word_count: int) -> Dict[str, Any]:
+        """
+        Determine competition density level
+        """
+        if sat_score >= 80:
+            return {"level": "low", "label": "Low", "color": "emerald", "icon": "✓"}
+        elif sat_score >= 60:
+            return {"level": "medium", "label": "Medium", "color": "yellow", "icon": "◐"}
+        elif sat_score >= 40:
+            return {"level": "high", "label": "High", "color": "orange", "icon": "◉"}
+        else:
+            return {"level": "very_high", "label": "Very High", "color": "red", "icon": "⊗"}
+
+    @staticmethod
+    def _get_signal(opp_score: int, lifecycle: Dict) -> Dict[str, Any]:
+        """
+        Generate at-a-glance signal for fast decision making
+        """
+        stage = lifecycle["stage"]
+
+        if opp_score >= 80 and stage in ["emerging", "rising"]:
+            return {"action": "strong_buy", "label": "★★★ GO", "color": "emerald", "priority": 1}
+        elif opp_score >= 70 and stage in ["emerging", "rising", "peaking"]:
+            return {"action": "buy", "label": "★★ GOOD", "color": "green", "priority": 2}
+        elif opp_score >= 55 and stage not in ["declining"]:
+            return {"action": "consider", "label": "★ OK", "color": "yellow", "priority": 3}
+        elif stage == "declining":
+            return {"action": "avoid", "label": "SKIP", "color": "red", "priority": 5}
+        else:
+            return {"action": "research", "label": "? RESEARCH", "color": "zinc", "priority": 4}
 
 
 class SocialTrendsService:
@@ -552,6 +725,12 @@ class SocialTrendsService:
         Returns structured data:
         - amazon, etsy, pinterest = MERCH trends (what sells)
         - tiktok, twitter, reddit = VIRAL trends (what's breaking)
+
+        Each trend includes:
+        - opportunity_score (0-100)
+        - lifecycle (emerging, rising, peaking, saturated, declining)
+        - competition (low, medium, high, very_high)
+        - signal (strong_buy, buy, consider, research, avoid)
         """
         logger.info("Fetching all platform trends...")
 
@@ -580,6 +759,24 @@ class SocialTrendsService:
             else:
                 logger.info(f"{platforms[i]}: {len(r)} trends")
 
+        # ENRICH each trend with Opportunity Score
+        def enrich_trend(trend: Dict) -> Dict:
+            opp_data = OpportunityScorer.calculate(trend)
+            return {
+                **trend,
+                "opportunity_score": opp_data["opportunity_score"],
+                "lifecycle": opp_data["lifecycle"],
+                "competition": opp_data["competition"],
+                "signal": opp_data["signal"],
+                "score_components": opp_data["components"],
+            }
+
+        amazon = [enrich_trend(t) for t in amazon]
+        etsy = [enrich_trend(t) for t in etsy]
+        pinterest = [enrich_trend(t) for t in pinterest]
+        reddit = [enrich_trend(t) for t in reddit]
+        tiktok = [enrich_trend(t) for t in tiktok]
+
         # Combined and deduplicated
         all_trends = []
         seen = set()
@@ -589,7 +786,13 @@ class SocialTrendsService:
                 seen.add(key)
                 all_trends.append(trend)
 
-        all_trends.sort(key=lambda x: x.get("shirt_potential", {}).get("score", 0), reverse=True)
+        # Sort by opportunity score (highest first)
+        all_trends.sort(key=lambda x: x.get("opportunity_score", 0), reverse=True)
+
+        # Calculate summary stats
+        high_opp_count = len([t for t in all_trends if t.get("opportunity_score", 0) >= 70])
+        emerging_count = len([t for t in all_trends if t.get("lifecycle", {}).get("stage") == "emerging"])
+        low_comp_count = len([t for t in all_trends if t.get("competition", {}).get("level") == "low"])
 
         return {
             # Merch-specific
@@ -602,8 +805,11 @@ class SocialTrendsService:
             "reddit": reddit,
             # Backwards compat
             "google": tiktok,
-            # Combined
+            # Combined (sorted by opportunity)
             "combined": all_trends[:30],
+            # Top opportunities (score >= 70)
+            "top_opportunities": [t for t in all_trends if t.get("opportunity_score", 0) >= 70][:10],
+            # Metadata
             "fetched_at": datetime.utcnow().isoformat(),
             "is_live": len(amazon) > 0 or len(etsy) > 0 or len(reddit) > 0 or len(tiktok) > 0,
             "counts": {
@@ -612,6 +818,14 @@ class SocialTrendsService:
                 "pinterest": len(pinterest),
                 "reddit": len(reddit),
                 "tiktok": len(tiktok),
+                "total": len(all_trends),
+            },
+            # Summary signals for dashboard
+            "summary": {
+                "high_opportunity_count": high_opp_count,
+                "emerging_count": emerging_count,
+                "low_competition_count": low_comp_count,
+                "avg_opportunity_score": int(sum(t.get("opportunity_score", 0) for t in all_trends) / max(len(all_trends), 1)),
             }
         }
 

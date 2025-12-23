@@ -287,7 +287,7 @@ export default function Dashboard() {
     },
   })
 
-  // Convert API response to display format
+  // Convert API response to display format with opportunity scores
   const liveTrends = trendsData?.data?.combined?.map((t, idx) => ({
     phrase: t.trend,
     trend: t.growth || '+100%',
@@ -296,7 +296,17 @@ export default function Dashboard() {
     category: t.category,
     isLive: t.is_live,
     source: t.source,
+    // New opportunity data
+    opportunityScore: t.opportunity_score || 0,
+    lifecycle: t.lifecycle || {},
+    competition: t.competition || {},
+    signal: t.signal || {},
+    scoreComponents: t.score_components || {},
   })) || []
+
+  // Get top opportunities for dashboard highlight
+  const topOpportunities = trendsData?.data?.top_opportunities || []
+  const trendsSummary = trendsData?.data?.summary || {}
 
   // Export ideas to CSV
   const exportToCSV = (data, filename) => {
@@ -527,43 +537,100 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Scrollable trending grid */}
+        {/* Summary Stats */}
+        {!trendsLoading && liveTrends.length > 0 && trendsSummary && (
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2 text-center">
+              <div className="text-lg font-bold text-emerald-400">{trendsSummary.high_opportunity_count || 0}</div>
+              <div className="text-[10px] text-zinc-500">High Opp</div>
+            </div>
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 text-center">
+              <div className="text-lg font-bold text-blue-400">{trendsSummary.emerging_count || 0}</div>
+              <div className="text-[10px] text-zinc-500">Emerging</div>
+            </div>
+            <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-2 text-center">
+              <div className="text-lg font-bold text-purple-400">{trendsSummary.low_competition_count || 0}</div>
+              <div className="text-[10px] text-zinc-500">Low Comp</div>
+            </div>
+            <div className="bg-zinc-800/50 border border-zinc-700/50 rounded-lg p-2 text-center">
+              <div className="text-lg font-bold text-zinc-300">{trendsSummary.avg_opportunity_score || 0}</div>
+              <div className="text-[10px] text-zinc-500">Avg Score</div>
+            </div>
+          </div>
+        )}
+
+        {/* Scrollable trending grid with opportunity scores */}
         {!trendsLoading && liveTrends.length > 0 && (
           <div className="max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {liveTrends.sort((a, b) => parseInt(b.trend) - parseInt(a.trend)).map((item, idx) => (
+              {liveTrends.sort((a, b) => (b.opportunityScore || 0) - (a.opportunityScore || 0)).map((item, idx) => (
                 <div
                   key={idx}
                   onClick={() => handlePhraseClick(item.phrase)}
-                  className={`group bg-zinc-800/50 rounded-xl p-3 hover:bg-zinc-800 transition-all cursor-pointer border border-transparent hover:border-zinc-700 ${
-                    idx < 5 ? 'ring-1 ring-emerald-500/30' : ''
+                  className={`group bg-zinc-800/50 rounded-xl p-3 hover:bg-zinc-800 transition-all cursor-pointer border ${
+                    item.signal?.color === 'emerald' ? 'border-emerald-500/30 hover:border-emerald-500/50' :
+                    item.signal?.color === 'green' ? 'border-green-500/30 hover:border-green-500/50' :
+                    'border-transparent hover:border-zinc-700'
                   }`}
                 >
-                  {idx < 5 && (
-                    <div className="flex items-center gap-1 mb-2">
-                      <Flame size={12} className="text-orange-400" />
-                      <span className="text-[10px] text-orange-400 font-medium">HOT</span>
-                    </div>
-                  )}
+                  {/* Signal + Score Header */}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                      item.signal?.color === 'emerald' ? 'bg-emerald-500/20 text-emerald-400' :
+                      item.signal?.color === 'green' ? 'bg-green-500/20 text-green-400' :
+                      item.signal?.color === 'yellow' ? 'bg-yellow-500/20 text-yellow-400' :
+                      item.signal?.color === 'red' ? 'bg-red-500/20 text-red-400' :
+                      'bg-zinc-500/20 text-zinc-400'
+                    }`}>
+                      {item.signal?.label || '?'}
+                    </span>
+                    <span className={`text-sm font-bold ${
+                      item.opportunityScore >= 70 ? 'text-emerald-400' :
+                      item.opportunityScore >= 55 ? 'text-yellow-400' : 'text-zinc-400'
+                    }`}>
+                      {item.opportunityScore}
+                    </span>
+                  </div>
+
+                  {/* Phrase */}
                   <p className="text-sm font-medium text-zinc-200 mb-2 line-clamp-2">{item.phrase}</p>
+
+                  {/* Lifecycle + Competition */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                      item.lifecycle?.color === 'emerald' ? 'bg-emerald-500/20 text-emerald-400' :
+                      item.lifecycle?.color === 'green' ? 'bg-green-500/20 text-green-400' :
+                      item.lifecycle?.color === 'orange' ? 'bg-orange-500/20 text-orange-400' :
+                      item.lifecycle?.color === 'yellow' ? 'bg-yellow-500/20 text-yellow-400' :
+                      item.lifecycle?.color === 'red' ? 'bg-red-500/20 text-red-400' :
+                      'bg-blue-500/20 text-blue-400'
+                    }`}>
+                      {item.lifecycle?.label || 'Stable'}
+                    </span>
+                    <span className={`text-[10px] ${
+                      item.competition?.level === 'low' ? 'text-emerald-400' :
+                      item.competition?.level === 'medium' ? 'text-yellow-400' :
+                      item.competition?.level === 'high' ? 'text-orange-400' : 'text-red-400'
+                    }`}>
+                      {item.competition?.icon} {item.competition?.label}
+                    </span>
+                  </div>
+
+                  {/* Platform + Growth */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1 text-xs text-emerald-400">
-                      <ArrowUpRight size={12} />
+                      <ArrowUpRight size={10} />
                       <span className="font-medium">{item.trend}</span>
                     </div>
-                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                      item.platform === 'Amazon' ? 'bg-orange-500/10 text-orange-400' :
+                      item.platform === 'Etsy' ? 'bg-pink-500/10 text-pink-400' :
+                      item.platform === 'Pinterest' ? 'bg-red-500/10 text-red-400' :
                       item.platform === 'TikTok' ? 'bg-pink-500/10 text-pink-400' :
                       item.platform === 'Reddit' ? 'bg-orange-500/10 text-orange-400' :
-                      item.platform === 'Twitter' ? 'bg-blue-500/10 text-blue-400' :
                       'bg-emerald-500/10 text-emerald-400'
                     }`}>{item.platform}</span>
                   </div>
-                  {item.bsr && (
-                    <div className="flex items-center gap-1 mt-2 text-[10px] text-zinc-500">
-                      <BarChart3 size={10} />
-                      <span>Potential: {item.bsr < 500 ? 'High' : item.bsr < 1000 ? 'Medium' : 'Good'}</span>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
